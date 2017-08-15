@@ -1,13 +1,41 @@
 Camera.main:GetComponent("TOD_Scattering").enabled = false
 RenderSettings.fog = false
 
-function getmeta(name)
-  local element = _G
-  if    type(name) == "string"
-  then  for part in string.split("Camera.main","[.]") do if element[part] then element = element[part] ; end ; end
-  end
-  return getmeta_1( element, name )
+function showmeta(...)
+    
+    for k,v in pairs({...}) do
+        local aTab = false
+        if    type(v) == "string"
+        then
+              aTab = getmeta(v)
+              if  type(aTab) == "table"
+              then
+                  for t1k,t1v in pairs(aTab) do
+                  if type(t1v) == "table"
+                  then
+                  for t2k,t2v in pairs(t1v)  do
+                      if type(t2v) == "string" then print(t2v) ; end
+                  end
+                  end
+                  end
 
+              end
+        end
+    end
+end
+
+function getmeta(...)
+  local aTab = {}
+  for k,name in pairs({...}) do
+      local element = _G
+      local elementParts = {}
+      if    type(name) == "string"
+      then
+            for part in string.split(name,"[\x5d[\x22\x27.]") do if part and #part ~= 0 and element[part] then elementParts[#elementParts+1] = part ; element = element[part] ; elseif part and #part ~= 0 and tonumber(part) and element[tonumber(part)] then elementParts[#elementParts+1] = tonumber(part) ; element = element[tonumber(part)] ; end ; end
+            if type(element) ~= "nil" then aTab[tostring(name)] = getmeta_1( element, name ) end
+      end
+  end
+  return aTab
 end
 
 function getmeta_1(element,name)
@@ -20,14 +48,14 @@ function getmeta_1(element,name)
     then    
             aTab[#aTab+1] = getmeta_2(element,name)
     end
-    return aTab
+    return unpack(aTab)
 end
 
 function getmeta_2(element,name)
     if  type(element) == "userdata"
     then
         local aTab = {}
-        for k,v in pairs(getmetatable(element)) do aTab[#aTab+1] = string.format( "%15s %s",type(v), name..tostring(k) ) ; end
+        for k,v in pairs(getmetatable(element)) do aTab[#aTab+1] = string.format( "  %-20s  %s",type(v), name..tostring(k) ) ; end
         table.sort(aTab)
         return aTab
     end
