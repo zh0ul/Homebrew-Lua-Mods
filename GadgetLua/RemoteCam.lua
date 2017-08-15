@@ -69,7 +69,7 @@ function Gadget:Update()
     then
           self:AimCheck()
           self:UpdateTargetNodes()
-          self:RotateInnerRing()
+          -- self:RotateInnerRing()
     end
 
     if    self.mode == 1

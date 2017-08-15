@@ -1,6 +1,11 @@
-Camera.main:GetComponent("TOD_Scattering").enabled = false
-RenderSettings.fog = false
-Camera.main.farClipPlane = 40000
+local Mod = {}
+function main(go) Mod.gameObject = go ; return Mod ; end
+
+function Mod:Awake()
+    Camera.main:GetComponent("TOD_Scattering").enabled = false
+    RenderSettings.fog = false
+    Camera.main.farClipPlane = 40000
+end
 
 function showmeta(...)
     local processed_input = false
@@ -68,4 +73,19 @@ function getmeta_2(element,name)
         table.sort(aTab)
         return aTab
     end
+end
+
+
+function Set_Object_Value(obj,key,value) if not obj or not key or ( not obj[key] and not getmetatable(obj)) then  Log("AntyFog:Set_Object_Value() Failed",tostring(obj),key,value) ; return false  end  ;  if type(value) == "nil" and type(obj[key]) == "boolean" then value = not obj[key]  end ; obj[key] = value ; Log(key,"=",value) ; return value ; end
+
+function Log(...)
+    local msgArray = { os.date(), }
+    local msg      = ""
+    for k,v in pairs({...}) do
+        if      type(v) == "table" then for k2,v2 in pairs(v) do msgArray[#msgArray+1] = string.format("%30s %s",tostring(k2), tostring(v2)) ; end
+        else    msgArray[#msgArray+1] = tostring(v)
+        end
+    end
+    if #msgArray > 1 then msg = table.concat(msgArray," ") ; end
+    Debug.Log( msg )
 end
