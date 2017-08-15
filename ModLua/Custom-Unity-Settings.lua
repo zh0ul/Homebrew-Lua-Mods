@@ -1,6 +1,15 @@
 Camera.main:GetComponent("TOD_Scattering").enabled = false
 RenderSettings.fog = false
 
+function getmeta(name)
+  local element = _G
+  if    type(name) == "string"
+  then  for part in string.split("Camera.main","[.]") do if obj[part] then obj = obj[part] ; end ; end
+  end
+  return getmeta_1( element, name )
+
+end
+
 function getmeta_1(element,name)
     local aTab = {}
     if type(element) == "table"
