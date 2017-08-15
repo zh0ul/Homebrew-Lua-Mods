@@ -224,7 +224,7 @@ function Gadget:AimCheck()
       self.ring:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
       
       --reset the size of the rect
-      self.aimedAtNode.transform.sizeDelta = Vector2(40,40)
+      self.aimedAtNode.transform.sizeDelta = Vector2(16,16)
       --bring alpha back down
       self.aimedAtNode:GetComponent("CanvasGroup").alpha = 0.2
       --remove the panel with name on it
