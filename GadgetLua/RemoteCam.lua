@@ -187,23 +187,25 @@ end
 
 function Gadget:AimCheck() 
 
-  local closest = 10
+  local closestAngle = 10
   local closestNode = false
   local closestNodeName = ""
   local closestTarget = false
   local closestTargetColor = Color(1,1,1,1)
 
   for i,v in pairs( self.targetNodes ) do
-    local ang = Vector3.Angle(Camera.main.transform.forward,v[2].transform.position-Camera.main.transform.position) 
-    if( ang and ang < closest ) then
-      closest = ang
-      closestNode = v[1]
-      if v and v[5] then closestNodeName      = v[5] elseif v[2] and v[2].locationName then closestNodeName   = v[2].locationName ; end
-      closestTarget = v[2]
-      if v and v[6] then closestTargetColor = v[6] elseif v[2] and v[2].color        then  closestTargetColor = v[2].color        ; end
+    local ang = false
+    if    v and v[2] and v[2].transform.position
+    then  ang = Vector3.Angle(Camera.main.transform.forward,v[2].transform.position-Camera.main.transform.position) 
+    end
+    if    ang and ang < closestAngle then
+          closestAngle  = ang
+          closestNode   = v[1]
+          closestTarget = v[2]
+          if v and v[5] then closestNodeName    = v[5] elseif v[2] and v[2].locationName  then  closestNodeName    = v[2].locationName ; end
+          if v and v[6] then closestTargetColor = v[6] elseif v[2] and v[2].color         then  closestTargetColor = v[2].color        ; end
     end
   end
-
 
   if  closestNode and self.aimedAtNode ~= closestNode
   then   
@@ -214,7 +216,7 @@ function Gadget:AimCheck()
 
         --self.ring:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
           -- reset the size of the rect
-          self.aimedAtNode.transform.sizeDelta = Vector2(32,32)
+          self.aimedAtNode.transform.sizeDelta = Vector2(24,24)
           -- bring alpha back down
           self.aimedAtNode:GetComponent("CanvasGroup").alpha = 0.2
           -- remove the panel with name on it

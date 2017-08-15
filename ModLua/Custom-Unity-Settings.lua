@@ -4,7 +4,7 @@ RenderSettings.fog = false
 function getmeta(name)
   local element = _G
   if    type(name) == "string"
-  then  for part in string.split("Camera.main","[.]") do if obj[part] then obj = obj[part] ; end ; end
+  then  for part in string.split("Camera.main","[.]") do if element[part] then element = element[part] ; end ; end
   end
   return getmeta_1( element, name )
 
