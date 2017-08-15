@@ -1,9 +1,11 @@
 Camera.main:GetComponent("TOD_Scattering").enabled = false
 RenderSettings.fog = false
+Camera.main.farClipPlane = 40000
 
 function showmeta(...)
-    
+    local processed_input = false
     for k,v in pairs({...}) do
+        processed_input = true
         local aTab = false
         if    type(v) == "string"
         then
@@ -11,16 +13,20 @@ function showmeta(...)
               if  type(aTab) == "table"
               then
                   for t1k,t1v in pairs(aTab) do
-                  if type(t1v) == "table"
-                  then
-                  for t2k,t2v in pairs(t1v)  do
-                      if type(t2v) == "string" then print(t2v) ; end
-                  end
-                  end
+                      if type(t1v) == "table"
+                      then
+                          for t2k,t2v in pairs(t1v)  do
+                              if type(t2v) == "string" then print(t2v) ; end
+                          end
+                      end
                   end
 
               end
         end
+    end
+    if not processed_input
+    then
+        for k,v in pairs(_G) do if v and v ~= package and v ~= _G and ( not Vector2 or v ~= Vector2 ) and (type(v) == "table" or type(v) == "userdata" ) then showmeta(k) ; end ; end
     end
 end
 
@@ -40,9 +46,12 @@ end
 
 function getmeta_1(element,name)
     local aTab = {}
-    if type(element) == "table"
+    if      type(element) == "table"
     then
-            for k,v in pairs(element) do if type(v) == "table" then aTab[tostring(k)] = getmeta_1(v,name.."."..tostring(k)) ; else aTab[tostring(k)] = getmeta_2(v,name.."."..tostring(k)) ; end ; end
+            if    getmetatable(element) and table.count(getmetatable(element)) > 1
+            then  aTab[#aTab+1] = getmeta_2(element,name)
+            else  for k,v in pairs(element) do if type(v) == "table" then aTab[#aTab+1] = getmeta_1(v,name.."."..tostring(k)) ; else aTab[#aTab+1] = getmeta_2(v,name.."."..tostring(k)) ; end ; end
+            end
 
     elseif  type(element) == "userdata"
     then    
@@ -52,10 +61,10 @@ function getmeta_1(element,name)
 end
 
 function getmeta_2(element,name)
-    if  type(element) == "userdata"
+    if  type(element) == "table" or type(element) == "userdata"
     then
         local aTab = {}
-        for k,v in pairs(getmetatable(element)) do aTab[#aTab+1] = string.format( "  %-20s  %s",type(v), name..tostring(k) ) ; end
+        for k,v in pairs(getmetatable(element)) do if k:sub(1,2) ~= "__" then aTab[#aTab+1] = string.format( "  %-20s  %s",type(v), name.."."..tostring(k) ) ; end ; end
         table.sort(aTab)
         return aTab
     end
