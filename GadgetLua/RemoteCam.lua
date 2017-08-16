@@ -46,6 +46,7 @@ function Gadget:RotateInnerRing()
     if self.ring3 then self.ring3.transform.localEulerAngles = r+Vector3(0,0, Time.deltaTime * 180.0 * 1) ; end
 end
 
+
 function Gadget:Update()
 
     if    HBU.MayControle() == false or HBU.InSeat() or HBU.InBuilder()

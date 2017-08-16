@@ -1,11 +1,23 @@
 local Mod = {}
 function main(go) Mod.gameObject = go ; return Mod ; end
 
+
 function Mod:Awake()
+    print("Custom-Unity-Settings.lua:Awake()")
     Camera.main:GetComponent("TOD_Scattering").enabled = false
     RenderSettings.fog = false
     Camera.main.farClipPlane = 40000
 end
+
+
+function Mod:OnDestroy()
+    print("Custom-Unity-Settings.lua:OnDestroy()")
+end
+
+
+function Mod:Update()
+end
+
 
 function showmeta(...)
     local processed_input = false
@@ -75,8 +87,42 @@ function getmeta_2(element,name)
     end
 end
 
+many2one_debug = false
 
-function Set_Object_Value(obj,key,value) if not obj or not key or ( not obj[key] and not getmetatable(obj)) then  Log("AntyFog:Set_Object_Value() Failed",tostring(obj),key,value) ; return false  end  ;  if type(value) == "nil" and type(obj[key]) == "boolean" then value = not obj[key]  end ; obj[key] = value ; Log(key,"=",value) ; return value ; end
+function many2one_encode(r,a,p,imax)
+    if  many2one_debug then
+        if   p == 1 then  print("imax = "..tostring(imax) ) ; print("r = 0") ; print("fold 1")
+                    else  print("fold "..tostring(p/imax+1))
+        end
+        print( "  r = r("..tostring(r)..") + ( a("..tostring(a)..") * p("..tostring(p)..")" )
+        print( "  p = p("..tostring(p)..") * imax("..tostring(imax)..") == "..tostring(p*imax) )
+    end
+    return r+a*p,p*imax
+end
+
+function many2one(imax,...)
+    local _args=({...})
+    if not imax and #_args == 0 then return 0 ; end
+    if not imax then for ai,a in pairs(_args) do if type(a) == "table" or type(a) == "Vector" or type(a) == "vector" then math.max(unpack(a),imax or 0) ; elseif type(a) == "number" then imax = math.max(imax or 0, (a or 0)); end ; end ; if imax then imax = imax + 1 ; end ; end
+    local p = 1
+    local r = 0
+    for ai,a in pairs(_args) do if type(a) == "table" or type(a) == "Vector" or type(a) == "vector" then for k,v in pairs(a) do r,p = many2one_encode(r,v,p,imax) ; end ; elseif type(a) == "number" then r,p = many2one_encode(r,a,p,imax); end ; end
+    local s = ""
+    return r,imax
+end
+
+function one2many(i,imax)
+
+    imax = (tonumber(imax or 1) or 1)
+    i    = (tonumber(i or 1) or 1)
+    if not imax or not i then return {i} ; end
+    local t = {}
+    local p = 1
+    while i > 0 do t[#t+1] = i%imax ; i = math.floor(i/imax) ; end
+    return t
+end
+
+function Set_Object_Value(obj,key,value) if not obj or not key or ( not obj[key] and not getmetatable(obj)) then  Log("Set_Object_Value() Failed",tostring(obj),key,value) ; return false  end  ;  if type(value) == "nil" and type(obj[key]) == "boolean" then value = not obj[key]  end ; obj[key] = value ; Log(key,"=",value) ; return value ; end
 
 function Log(...)
     local msgArray = { os.date(), }
