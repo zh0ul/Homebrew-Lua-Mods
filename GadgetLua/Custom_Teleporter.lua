@@ -175,7 +175,6 @@ function Gadget:UpdateTeleportNodes()
   --position nodes on screenspace
   for i,v in pairs(self.teleportNodes) do
     local screenPos = Camera.main:WorldToScreenPoint(v[2].transform.position)
-    --screenPos.y = Screen.height - screenPos.y
     screenPos.x = screenPos.x - (Screen.width * 0.5)
     screenPos.y = screenPos.y - (Screen.height * 0.5)
     if( screenPos.z < 0 ) then 
@@ -183,7 +182,6 @@ function Gadget:UpdateTeleportNodes()
     end
     screenPos.z = 0
     v[1].transform.anchoredPosition = screenPos
-    --rotate the wormhole image
     local r = v[3].transform.localEulerAngles
     v[3].transform.localEulerAngles = r+Vector3(0,0, Time.deltaTime * 180.0 * v[4])
   end

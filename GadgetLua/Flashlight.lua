@@ -5,7 +5,7 @@ function main(go) Flashlight.gameObject = go ; return Flashlight ; end
 function Flashlight:Awake()
   print("Flashlight:Awake()")
   self.setColor                    = function(obj,r,g,b,a) if not obj or Slua.IsNull(obj) then return ; end ; r,g,b,a = r or self.r, g or self.g, b or self.b, a or self.a ; obj.color = Color(r,g,b,a) ; end
-  self.setText                     = function(obj,text)    if not obj or Slua.IsNull(obj) then return ; end ; text = tostring(text) ; obj.text = text ; end;
+  self.setText                     = function(obj,text)    if not obj or Slua.IsNull(obj) then return ; end ; text = tostring(text) ; if obj.text then obj.text = text ; end ; end
   self.useKey                      = HBU.GetKey("UseGadget")
   self.useKey2                     = HBU.GetKey("UseGadgetSecondary")
   self.obj                         = GameObject("FlashlightObj")                -- name the object FlaslightObj, cause why not
@@ -20,23 +20,23 @@ function Flashlight:Awake()
   self.light.enabled               = false                                      -- Turn off light by default
   self.r,self.g,self.b,self.a      = 0.5,0.5,0.5,0.5
   self.light.color                 = Color(self.r, self.b, self.g, self.a)
-  self.running                     = false
+  self.displayValues               = false
   self.objectsToDestroy            = { "obj", "textGo","light" }
   local parent                     = HBU.menu.transform:Find("Foreground").gameObject
   self.textGo                      = HBU.Instantiate("Text",parent):GetComponent("Text")
   HBU.LayoutRect(self.textGo.gameObject,Rect(5,35,300,200))
   self.setColor(self.textGo,1,1,0,1)
-  self.setText(self.textGo," Current Red: " .. tostring(self.r) .. "\n Current Green: " .. tostring(self.g) .. "\n Current Blue:" .. tostring(self.b) .. "\n Light Intensity:" .. tostring(self.light.intensity) .. "\n Light Range:" .. tostring(self.light.range) .. "\n Cone Degrees:" .. tostring(self.light.spotAngle))
-  self.textGo.gameObject:SetActive( self.running )
+  -- self.setText(self.textGo," Current Red: " .. tostring(self.r) .. "\n Current Green: " .. tostring(self.g) .. "\n Current Blue:" .. tostring(self.b) .. "\n Light Intensity:" .. tostring(self.light.intensity) .. "\n Light Range:" .. tostring(self.light.range) .. "\n Cone Degrees:" .. tostring(self.light.spotAngle))
+  self.textGo.gameObject:SetActive( self.displayValues )
   self.keys = {
     I = function() self.r               = (self.r + 0.1)%1 ; end,
     J = function() self.r               = (self.r - 0.1)%1 ; end,
     O = function() self.g               = (self.g + 0.1)%1 ; end,
     K = function() self.g               = (self.g - 0.1)%1 ; end,
-    P = function() self.b               = (self.b + 0.1)%1 ;  end,
-    L = function() self.b               = (self.b - 0.1)%1 ;  end,
+    P = function() self.b               = (self.b + 0.1)%1 ; end,
+    L = function() self.b               = (self.b - 0.1)%1 ; end,
     N = function() self.light.range     = 1000 ; end,
-    M = function() self.light.intensity = 1.25; end,
+    M = function() self.light.intensity = 1.25 ; end,
     Y = function() self.light.intensity = self.light.intensity+0.1; end,
     G = function() self.light.intensity = self.light.intensity-0.1; end,
     U = function() self.light.range     = self.light.range+50; end,
@@ -47,8 +47,8 @@ end
 function Flashlight:Update()
 
     if  ( HBU.MayControle() == false  or  HBU.InSeat()  or HBU.InBuilder())  then 
-          if  self.light.enabled  or  self.running  then
-              self.running = false
+          if  self.light.enabled  or  self.displayValues  then
+              self.displayValues = false
               self.light.enabled = false
               self.textGo.gameObject:SetActive(false)
           end
@@ -56,23 +56,20 @@ function Flashlight:Update()
     end
 
     if    (self.useKey:GetKeyDown())
-    then  self.light.enabled = not self.light.enabled -- turn light on/off
+    then  if self.displayValues then self.displayValues = false ; self.light.enabled = false ; else self.displayValues = not self.light.enabled ; self.light.enabled = not self.light.enabled ; end
     end
 
-    if  self.keys  then
-        for funcKey,func  in  pairs(self.keys)  do
-            if  ( Input.GetKeyDown( KeyCode[funcKey] ) ) then func() end
-        end
-        if  self.running then
-            self.light.color = Color(self.r, self.g, self.b, self.a)
-        end
-        self.setText( self.textGo, " Current Red: " .. tostring(self.r) .. "\n Current Green: " .. tostring(self.g) .. "\n Current Blue:" .. tostring(self.b) .. "\n Light Intensity:" .. tostring(self.light.intensity) .. "\n Light Range:" .. tostring(self.light.range) .. "\n Cone Degrees:" .. tostring(self.light.spotAngle) )
+    if    self.keys  then
+          for   funcKey,func  in  pairs(self.keys)  do
+                if  ( Input.GetKeyDown( KeyCode[funcKey] ) ) then func() end
+          end
+          self.light.color = Color(self.r, self.g, self.b, self.a)
     end
 
-    if  self.useKey2:GetKeyDown()  then
-        self.running = not self.running
-        self.textGo.gameObject:SetActive(self.running)
+    if    self.displayValues
+    then  self.setText( self.textGo, " Current Red: " .. tostring(self.r) .. "\n Current Green: " .. tostring(self.g) .. "\n Current Blue:" .. tostring(self.b) .. "\n Light Intensity:" .. tostring(self.light.intensity) .. "\n Light Range:" .. tostring(self.light.range) .. "\n Cone Degrees:" .. tostring(self.light.spotAngle) )
     end
+
 end
 
 function Flashlight:OnDestroy()
