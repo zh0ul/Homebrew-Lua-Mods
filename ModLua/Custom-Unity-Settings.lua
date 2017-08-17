@@ -1,6 +1,7 @@
 local Mod = {}
 function main(go) Mod.gameObject = go ; return Mod ; end
 
+------------------------------------------------------------------------------------------------------------
 
 function Mod:Awake()
     print("Custom-Unity-Settings.lua:Awake()")
@@ -9,15 +10,18 @@ function Mod:Awake()
     Camera.main.farClipPlane = 40000
 end
 
+------------------------------------------------------------------------------------------------------------
 
 function Mod:OnDestroy()
     print("Custom-Unity-Settings.lua:OnDestroy()")
 end
 
+------------------------------------------------------------------------------------------------------------
 
 function Mod:Update()
 end
 
+------------------------------------------------------------------------------------------------------------
 
 function showmeta(...)
     local processed_input = false
@@ -87,6 +91,8 @@ function getmeta_2(element,name)
     end
 end
 
+------------------------------------------------------------------------------------------------------------
+
 many2one_debug = false
 
 function many2one_encode(r,a,p,imax)
@@ -100,6 +106,7 @@ function many2one_encode(r,a,p,imax)
     return r+a*p,p*imax
 end
 
+
 function many2one(imax,...)
     local _args=({...})
     if not imax and #_args == 0 then return 0 ; end
@@ -110,6 +117,7 @@ function many2one(imax,...)
     local s = ""
     return r,imax
 end
+
 
 function one2many(i,imax)
 
@@ -122,7 +130,11 @@ function one2many(i,imax)
     return t
 end
 
+------------------------------------------------------------------------------------------------------------
+
 function Set_Object_Value(obj,key,value) if not obj or not key or ( not obj[key] and not getmetatable(obj)) then  Log("Set_Object_Value() Failed",tostring(obj),key,value) ; return false  end  ;  if type(value) == "nil" and type(obj[key]) == "boolean" then value = not obj[key]  end ; obj[key] = value ; Log(key,"=",value) ; return value ; end
+
+------------------------------------------------------------------------------------------------------------
 
 function Log(...)
     local msgArray = { os.date(), }
@@ -135,3 +147,52 @@ function Log(...)
     if #msgArray > 1 then msg = table.concat(msgArray," ") ; end
     Debug.Log( msg )
 end
+
+------------------------------------------------------------------------------------------------------------
+
+function  forLineIn(file,func,suppressBlankLines,trimEdgeWhiteSpace,trimAllWhiteSpace)
+  if type(func) == "string" then func = loadstring(func) ; end
+  if type(file) ~= "string" or type(func) ~= "function" then return 0,0 ; end
+  local fd = io.open( file, "r" )
+  if ( not fd ) then print("forLineIn: Could not open file "..tostring(file)) ; return 0,0 ; end
+  local lcount,lexec = 0,0
+  for line in fd:lines() do
+      lcount = lcount + 1
+      if    trimEdgeWhiteSpace or trimAllWhiteSpace
+      then
+            line = string.gsub(line, string.char(0x0d), "")
+            line = string.gsub(line,"^"..string.char(0x09).."*","")
+            line = string.gsub(line,"^"..string.char(0x20).."*","")
+            line = string.gsub(line,string.char(0x09).."*$","")
+            line = string.gsub(line,string.char(0x20).."*$","")
+      end
+      if    trimAllWhiteSpace
+      then
+            line = string.gsub(line,string.char(0x09)," ")
+            line = string.gsub(line,string.char(0x20)," ")
+      end
+      if    not suppressBlankLines or #line > 0
+      then
+            lexec = lexec + 1
+            func(line)
+      end
+  end
+  fd:close()
+  return lcount,lexec
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function log()
+  local dataPath =  Application.dataPath  --  D:/Games/Steam/steamapps/common/Homebrew - Vehicle Sandbox/HB146_Data
+  local dataTab  = {}
+  forLineIn(dataPath.."/output_log.txt",function(line) dataTab[#dataTab+1] = line  ; end,true,true,true)
+  local tempTab = {}
+  local l,h = #dataTab-100, #dataTab
+  if  l < 1 then l = 1 ; end
+  for i = #dataTab,#dataTab-100,-1  do  if dataTab[i] then print(dataTab[i]) ; end  end
+end
+
+HBConsoleManager.instances[1].OnConnect = { "+=", log }
+
+------------------------------------------------------------------------------------------------------------

@@ -5,14 +5,15 @@ function ModLua:Awake()
     Debug.Log("AntyFog:Awake()")
 
     self.Variables           = {
-      Save                   = function() for k,v in pairs(self.Variables) do if v ~= self.Variables.Save and v ~= self.Variables.Load then HBU.SaveValue("AntyFog",tostring(k),tostring(v)) ; end ; end ; end,
-      Load                   = function() if  self.Variables.Loaded  then  return end ; for k,v in pairs(self.Variables) do local val = HBU.LoadValue("AntyFog",tostring(k)) ; if type(v) == "number" then self.Variables[k] = tonumber(val) ; elseif type(v) == "string" then if v == "false" then self.Variables[k] = false ; elseif v == "true" then self.Variables[k] = true ; else self.Variables[k] = val  end ; end ; end ; self.Variables.Loaded = true ; end,
-      Loaded                 = false,
-      GlobalDensity          = 0.00012,
-      fogDensity             = 0.00012,
-      farClipPlane           = 40000,
-      fog                    = false,
-      TOD_Scattering_enabled = true,
+      Save                         = function() for k,v in pairs(self.Variables) do if v ~= self.Variables.Save and v ~= self.Variables.Load then HBU.SaveValue("AntyFog",tostring(k),tostring(v)) ; end ; end ; end,
+      Load                         = function() if  self.Variables.Loaded  then  return end ; for k,v in pairs(self.Variables) do local val = HBU.LoadValue("AntyFog",tostring(k)) ; if type(v) == "number" then self.Variables[k] = tonumber(val) ; elseif type(v) == "string" then if v == "false" then self.Variables[k] = false ; elseif v == "true" then self.Variables[k] = true ; else self.Variables[k] = val  end ; end ; end ; self.Variables.Loaded = true ; end,
+      SaveName                     = "AntyFog",
+      Loaded                       = false,
+      GlobalDensity                = 0.00012,
+      fogDensity                   = 0.00012,
+      farClipPlane                 = 40000,
+      fog                          = false,
+      TOD_Scattering_enabled       = true,
    }
 
     self.v                         = self.Variables
@@ -34,20 +35,12 @@ function ModLua:Awake()
     self.Actions.Toggle_RenderSettings_fog(self.v.fog)
 end
 
-
 function ModLua:Set_General_Settings()
+    for k,f in pairs({"Set_GlobalDensity","Set_FogDensity","Set_farClipPlane"}) do if self[f] then self[f]  end
     local a = self.Actions
     a.Set_GlobalDensity()
     a.Set_FogDensity()
     a.Set_farClipPlane()
-end
-
-function ModLua:VariablesHandler()
-    if    not self.Variables.Loaded
-    then
-          for k,v in pairs(self.Variables) do local val = HBU.LoadValue("AntyFog",tostring(k)) ; if type(v) == "number" then self.Variables[k] = tonumber(val) ; elseif type(v) == "string" then if v == "false" then self.Variables[k] = false ; elseif v == "true" then self.Variables[k] = true ; else self.Variables[k] = val  end ; end ; end
-          self.Variables.Loaded = true
-    end
 end
 
 function ModLua:Update()

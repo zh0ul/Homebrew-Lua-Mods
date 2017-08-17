@@ -2,8 +2,18 @@ local Gadget = {}
 
 function Gadget:Awake()
   Debug.Log("RemoteCam:Awake()")
-  self.useGadgetKey          = HBU.GetKey("UseGadget")
-  self.useGadgetSecondaryKey = HBU.GetKey("UseGadgetSecondary")
+  self.keys   = {
+      lmb     = HBU.GetKey("UseGadget"),
+      rmb     = HBU.GetKey("UseGadgetSecondary"),
+      inv     = HBU.GetKey("Inventory"),
+      zoomIn  = HBU.GetKey("ZoomIn"),
+      zoomOut = HBU.GetKey("ZoomOut"),
+      run     = HBU.GetKey("Run"),
+      shift   = HBU.GetKey("LeftShift"),
+  }
+  self.hbplayer              = Camera.main:GetComponent("HBPlayer")
+  self:SwitchToFirstPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToFirstPerson()  ; end ; end
+  self:SwitchToThirdPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToThirdPerson()  ; end ; end
   self.path_userdata         = Application.persistentDataPath
   self.path_gadget_user      = self.path_userdata.."/Lua/GadgetLua/"
   self.path_gadget           = HBU.GetLuaFolder().."/GadgetLua/"
@@ -18,8 +28,9 @@ function Gadget:Awake()
   self.Cams.Active           = {}
   self.active                = false
   self.camMode               = 3
-  self.x,self.y,self.z       = 0,0,0
+  self.x,self.y,self.z       = 0,5,10
   self.camOffset             = Vector3(self.x,self.y,self.z)
+  self.aimedAtPlayer         = true
   self:SetDefaults()
 end
 
@@ -53,9 +64,11 @@ function Gadget:Update()
     then  return
     end
 
+    if    not self.rb then self.rb = GameObject.Find("Player").gameObject:GetComponent("Rigidbody") ; end
+
     if    self.mode == -1 then self.mode = 0 ; return ; end
 
-    if    self.useGadgetSecondaryKey.GetKey() > 0.5
+    if    self.keys.rmb.GetKey() > 0.5
     and   ( self.mode == 0 or self.mode == 3 )
     then
           if  self.aimedAtTarget then self.aimedAtTarget = nil ; end
@@ -70,18 +83,17 @@ function Gadget:Update()
     then
           self:AimCheck()
           self:UpdateTargetNodes()
-          -- self:RotateInnerRing()
+          self:RotateInnerRing()
     end
 
     if    self.mode == 1
     and   self.aimedAtTarget
-    -- and   self.useGadgetSecondaryKey.GetKey() == 0
-    and   self.useGadgetSecondaryKey.GetKeyUp()
+    and   self.keys.rmb.GetKeyUp()
     then
-        self.mode = 2
-        print("Mode:"..tostring(self.mode))
+          self.mode = 2
+          print("Mode:"..tostring(self.mode))
 
-    elseif  ( self.mode == 1 and self.useGadgetSecondaryKey.GetKey() == 0 )
+    elseif  ( self.mode == 1 and self.keys.rmb.GetKey() == 0 )
     or      self.mode == 2
     then
           self:DestroyObjects()
@@ -92,20 +104,21 @@ function Gadget:Update()
 
     elseif  self.mode == 3
     then
-            if    self.useGadgetKey.GetKey() > 0.5
+            if    self.keys.lmb.GetKey() > 0.5
             then
-                  self.aimedAtTarget = GameObject.Find("Player").gameObject:GetComponent("Rigidbody")
+                  self.aimedAtTarget = self.rb
+                  self.aimedAtPlayer = true
                   HBU.EnableGadgetMouseScroll()
-                  GameObject.Find("Player").gameObject:GetComponent("Rigidbody").isKinematic = true
-                  self.camOffset = Vector3(0,0,0)
-                  Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset
-                  -- self.mode = -1
-                  -- print("Mode:"..tostring(self.mode))
+                  --Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset
+                  self:SwitchToFirstPerson()
+                  self:SwitchToThirdPerson()
+                  self.mode = -1
+                  print("Mode:"..tostring(self.mode))
                   return
             end
-            self.camOffset = Vector3(0,5,5)
-            Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset
-            GameObject.Find("Player").gameObject:GetComponent("Rigidbody").isKinematic = false
+
+            Camera.main.transform.position = self.aimedAtTarget.transform.position
+          --GameObject.Find("Player").gameObject:GetComponent("Rigidbody").isKinematic = false
     end
 
 end
@@ -134,6 +147,9 @@ function Gadget:CreateTargetNodes()
   then
       for k,v in pairs(self.vehicles)
       do
+        local r,g,b,a = math.random(128,255)/255, math.random(128,255)/255, math.random(128,255)/255, 0.95
+        if math.random(1,2) == 1 then r = 0 ; elseif math.random(1,2) == 1 then g = 0 else b = 0 ; end
+        local curColor = Color(r,g,b,a)
         local node = HBU.Instantiate("Container",parent)
         node.transform.pivot = Vector2(0.5,0.5)
         node.transform.anchorMin = Vector2(0.5,0.5)
@@ -149,7 +165,7 @@ function Gadget:CreateTargetNodes()
         img.transform.offsetMin = Vector2.zero
         img.transform.offsetMax = Vector2.zero
         img:GetComponent("RawImage").texture = self.wormholeImage
-        img:GetComponent("RawImage").color = Color(0.9, 0.9, 0.9)
+        img:GetComponent("RawImage").color = curColor
         
         local img2 = HBU.Instantiate("RawImage",node)
         img2.name = "WormHole2"
@@ -158,10 +174,10 @@ function Gadget:CreateTargetNodes()
         img2.transform.offsetMin = Vector2.zero
         img2.transform.offsetMax = Vector2.zero
         img2:GetComponent("RawImage").texture = self.wormholeImage2
-        img2:GetComponent("RawImage").color =  Color(0.9, 0.9, 0.9)
+        img2:GetComponent("RawImage").color =  curColor
 
         local rotSpeed = Mathf.Clamp(Random.value,0.5,1)
-        self.targetNodes[#self.targetNodes+1] = { node, v, img2, rotSpeed, "Vehicle "..tostring(k), Color(math.random(0,255)/255, math.random(0,255)/255, math.random(0,255)/255, 0.9) }
+        self.targetNodes[#self.targetNodes+1] = { node, v, img2, rotSpeed, "Vehicle "..tostring(k), curColor }
       end
   end
 
@@ -230,6 +246,7 @@ function Gadget:AimCheck()
       --set ring color
         self.ring1:GetComponent("RawImage").color = closestTargetColor
         self.ring2:GetComponent("RawImage").color = Color(0,0,0,0)
+        self.ring3:GetComponent("RawImage").color = closestTargetColor
       --move up in draw cahin
         closestNode.transform:SetAsLastSibling()
       --increase size of rect
@@ -255,7 +272,11 @@ function Gadget:AimCheck()
   end
   if closestNode      then  self.aimedAtNode   = closestNode          ; elseif self.aimedAtNode    then self.aimedAtNode   = nil  ; end
   if closestTarget    then  self.aimedAtTarget = closestTarget        ; elseif self.aimedAtTarget  then self.aimedAtTarget = nil  ; end
-  -- if not self.aimedAtNode     then  self.ring:GetComponent("RawImage").color = Color(0.7,0.7,0.7) ; end
+  if not self.aimedAtNode
+  and self.ring1
+  and self.ring2      then  self.ring1:GetComponent("RawImage").color = Color(0.7,0.7,0.7,0) ; self.ring2:GetComponent("RawImage").color = Color(0.7,0.7,0.7,0.95)
+  else                      self.aimedAtPlayer = true
+  end
 end
 
 

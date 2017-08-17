@@ -15,7 +15,7 @@ function Gadget:Awake()
                               ["Run"]      = {},
                               ["Control"]  = {},
                               ["Alt"]      = {},
-                             }
+                           }
 
   self.Components        = {
                               rigidbody  = "UnityEngine.Rigidbody",
