@@ -12,8 +12,10 @@ function Gadget:Awake()
       shift   = HBU.GetKey("LeftShift"),
   }
   self.hbplayer              = Camera.main:GetComponent("HBPlayer")
-  self:SwitchToFirstPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToFirstPerson()  ; end ; end
-  self:SwitchToThirdPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToThirdPerson()  ; end ; end
+  self.Actions               = {
+                SwitchToFirstPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToFirstPersonView()  ; end ; end,
+                SwitchToThirdPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToThirdPersonView()  ; end ; end,
+  }
   self.path_userdata         = Application.persistentDataPath
   self.path_gadget_user      = self.path_userdata.."/Lua/GadgetLua/"
   self.path_gadget           = HBU.GetLuaFolder().."/GadgetLua/"
@@ -64,7 +66,7 @@ function Gadget:Update()
     then  return
     end
 
-    if    not self.rb then self.rb = GameObject.Find("Player").gameObject:GetComponent("Rigidbody") ; end
+    if    not self.rb or Slua.IsNull(self.rb) then self.rb = GameObject.Find("Player").gameObject:GetComponent("Rigidbody") ; return ; end
 
     if    self.mode == -1 then self.mode = 0 ; return ; end
 
@@ -109,16 +111,13 @@ function Gadget:Update()
                   self.aimedAtTarget = self.rb
                   self.aimedAtPlayer = true
                   HBU.EnableGadgetMouseScroll()
-                  --Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset
-                  self:SwitchToFirstPerson()
-                  self:SwitchToThirdPerson()
+                  if HBU.InSeat() then self.Actions.SwitchToThirdPerson() ; else self.Actions.SwitchToFirstPerson() ; end
                   self.mode = -1
                   print("Mode:"..tostring(self.mode))
                   return
             end
 
             Camera.main.transform.position = self.aimedAtTarget.transform.position
-          --GameObject.Find("Player").gameObject:GetComponent("Rigidbody").isKinematic = false
     end
 
 end
