@@ -36,11 +36,7 @@ function ModLua:Awake()
 end
 
 function ModLua:Set_General_Settings()
-    for k,f in pairs({"Set_GlobalDensity","Set_FogDensity","Set_farClipPlane"}) do if self[f] then self[f]  end
-    local a = self.Actions
-    a.Set_GlobalDensity()
-    a.Set_FogDensity()
-    a.Set_farClipPlane()
+    for k,f in pairs({"Set_GlobalDensity","Set_FogDensity","Set_farClipPlane"}) do if self[f] then self[f]()  end end
 end
 
 function ModLua:Update()
