@@ -6,15 +6,19 @@ function Gadget:Awake()
       lmb     = HBU.GetKey("UseGadget"),
       rmb     = HBU.GetKey("UseGadgetSecondary"),
       inv     = HBU.GetKey("Inventory"),
-      zoomIn  = HBU.GetKey("ZoomIn"),
-      zoomOut = HBU.GetKey("ZoomOut"),
+      zoomIn  = HBU.GetKey("ZoomIn"),  -- HBU.DisableGadgetMouseScroll()    Use these to disable/enable Gadget Selection.
+      zoomOut = HBU.GetKey("ZoomOut"), -- HBU.EnableGadgetMouseScroll()     (ex: when placing a vehicle, use Disable so ZoomIn/ZoomOut can be used to change spawn distance)
       run     = HBU.GetKey("Run"),
-      shift   = HBU.GetKey("LeftShift"),
+      shift   = HBU.GetKey("Shift"),
+      control = HBU.GetKey("Control"),
+      control = HBU.GetKey("Alt"),
+      move    = HBU.GetKey("Move"),
+      navback = HBU.GetKey("NavigateBack"),
   }
   self.hbplayer              = Camera.main:GetComponent("HBPlayer")
   self.Actions               = {
-                SwitchToFirstPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToFirstPersonView()  ; end ; end,
-                SwitchToThirdPerson   = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToThirdPersonView()  ; end ; end,
+      SwitchToFirstPerson    = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToFirstPersonView()  ; end ; end,
+      SwitchToThirdPerson    = function() if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer:SwitchToThirdPersonView()  ; end ; end,
   }
   self.path_userdata         = Application.persistentDataPath
   self.path_gadget_user      = self.path_userdata.."/Lua/GadgetLua/"
@@ -30,7 +34,7 @@ function Gadget:Awake()
   self.Cams.Active           = {}
   self.active                = false
   self.camMode               = 3
-  self.x,self.y,self.z       = 0,5,10
+  self.x,self.y,self.z       = 0,7,0
   self.camOffset             = Vector3(self.x,self.y,self.z)
   self.aimedAtPlayer         = true
   self:SetDefaults()
@@ -62,7 +66,7 @@ end
 
 function Gadget:Update()
 
-    if    HBU.MayControle() == false or HBU.InSeat() or HBU.InBuilder()
+    if    HBU.InSeat()  or  HBU.InBuilder()  -- or not HBU.MayControle()
     then  return
     end
 
@@ -71,9 +75,12 @@ function Gadget:Update()
     if    self.mode == -1 then self.mode = 0 ; return ; end
 
     if    self.keys.rmb.GetKey() > 0.5
-    and   ( self.mode == 0 or self.mode == 3 )
+    and   self.mode == 0
     then
-          if  self.aimedAtTarget then self.aimedAtTarget = nil ; end
+          if  self.aimedAtTarget then
+              self.aimedAtTarget = nil
+          end
+          if self.mode == 3 then if  HBU.InSeat() then self.Actions.SwitchToThirdPerson() else self.Actions.SwitchToFirstPerson() ; end ; end
           self:SetDefaults()
           self:GetAllVehicleParts()
           self:CreateTargetNodes()
@@ -85,7 +92,7 @@ function Gadget:Update()
     then
           self:AimCheck()
           self:UpdateTargetNodes()
-          self:RotateInnerRing()
+        --self:RotateInnerRing()
     end
 
     if    self.mode == 1
@@ -106,7 +113,7 @@ function Gadget:Update()
 
     elseif  self.mode == 3
     then
-            if    self.keys.lmb.GetKey() > 0.5
+            if    not HBU.MayControle() -- self.keys.lmb.GetKey() > 0.5
             then
                   self.aimedAtTarget = self.rb
                   self.aimedAtPlayer = true
@@ -116,9 +123,9 @@ function Gadget:Update()
                   print("Mode:"..tostring(self.mode))
                   return
             end
-
-            Camera.main.transform.position = self.aimedAtTarget.transform.position
+            if self.aimedAtTarget and not Slua.IsNull(Camera.main.transform.position) then Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset ; end
     end
+
 
 end
 
@@ -141,7 +148,6 @@ function Gadget:CreateTargetNodes()
   self.ring3:GetComponent("RawImage").texture = self.ringImage3
   self.ring3:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
 
-  -- Create pseudo spawn points out of vehicles.
   if  self.vehicles
   then
       for k,v in pairs(self.vehicles)

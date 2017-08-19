@@ -90,13 +90,13 @@ end
 function Gadget:ManageSettings(saveSettings)
     if not self.settings          then self.settings = {} ; end
     if not self.settings.Defaults then return true ; end
-    if not self.settings.Name     then self.settings.Name = "GadgetSettings" ; end
+    if not self.settings.Name     then self.settings.Name = "SupermanSettings" ; end
     for k,v in pairs (self.settings.Defaults) do
         if  saveSettings
         then
             if     self[k]  then HBU.SaveValue( self.settings.Name, tostring(k), tostring(self[k]) ) ; end
         else
-            if not self[k]  then  local ret = HBU.LoadValue( self.settings.Name, tostring(k) )  if ret and ret ~= "" then if tonumber(ret) then self[k] = tonumber(ret) ; else self[k] = v ; end ; end ; end
+            if not self[k]  then  local ret = HBU.LoadValue( self.settings.Name, tostring(k) )  if ret and ret ~= "" then if tonumber(ret) then self[k] = tonumber(ret) ; elseif ret == "true" then self[k] = true ; elseif ret == "false" then self[k] = false ; else self[k] = v ; end ; end ; end
         end
     end
 end
@@ -152,6 +152,17 @@ function Gadget:Update()
   -- self:UpdateIndicators()
 end
 
+
+function Gadget:SetupHUD()
+    local parent  = HBU.menu.transform:Find("Foreground").gameObject
+    for k,v in pairs({"textHUD1","textHUD2","textHUD3",}) do
+        if Font then  self[v].font = Font.CreateDynamicFontFromOSFont({"consolas","Roboto","Arial"}, 12)  end
+        self[v]        = HBU.Instantiate("Text",parent):GetComponent("Text")
+        HBU.LayoutRect(self[v].gameObject,Rect( 5+((k-1)*100), 35, 300, 200 ) )
+        self[v].color  = Color(1,1,0,1)
+        self[v].text   = ""
+    end
+end
 
 function Gadget:OnDestroy()
   Debug.Log("Superman:OnDestroy()")
