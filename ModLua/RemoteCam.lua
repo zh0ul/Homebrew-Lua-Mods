@@ -30,6 +30,7 @@ function RemoteCam:Awake()
       SwitchToFirstPerson    = function(viewMode) viewMode = viewMode or self.camModeFirst ; if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer.SwitchToFirstPersonView()  ; end ; end,
       SwitchToThirdPerson    = function(viewMode) viewMode = viewMode or self.camModeThird ; if not self.hbplayer or Slua.IsNull(self.hbplayer) then self.hbplayer = Camera.main:GetComponent("HBPlayer") ; end ; if not Slua.IsNull(self.hbplayer) then self.hbplayer.SwitchToThirdPersonView()  ; end ; end,
       SetCam                 = function(viewMode) viewMode = viewMode or 1 ; self.Actions.SwitchToFirstPerson(viewMode) ; end,
+      SetPlayerMovement      = function(toggle) local charmotor = Camera.main:GetComponentInParent("rigidbody_character_motor") ; if type(toggle) ~= "boolean" then toggle = not charmotor.enabled ; end ; charmotor.enabled = toggle ; end
   }
   self.path_userdata         = Application.persistentDataPath
   self.path_gadget_user      = self.path_userdata.."/Lua/GadgetLua/"
@@ -86,7 +87,7 @@ function RemoteCam:Update()
     if    not self.player or Slua.IsNull(self.player) then self.player = GameObject.Find("Player") ; end
     if    not self.rb     or Slua.IsNull(self.rb)     and  self.player  then self.rb = self.player.gameObject:GetComponent("Rigidbody") ; end
 
-    if    self.mode == -1 then self.mode = 0 ; return ; end
+    if    self.mode == -1 then self.mode = 0 ; self.Actions.SetPlayerMovement(true) ; return ; end
 
     if    self.keys.tilde.GetKeyDown()
     and   self.mode == 0
@@ -124,7 +125,7 @@ function RemoteCam:Update()
           self.originalLoc  = self.rb.transform.position
           self.wasInVehicle = HBU.InSeat()
           -- self.rb.isKinematic = false
-          Camera.main:GetComponentInParent("rigidbody_character_motor").enabled = false
+          self.Actions.SetPlayerMovement(false)
           self:DestroyObjects()
           print("Mode:"..tostring(self.mode))
 
@@ -139,7 +140,7 @@ function RemoteCam:Update()
                   if not self.wasInVehicle and not HBU.InSeat() then  HBU.TeleportPlayer(self.originalLoc + Vector3(0,1,0))  ; end
                   -- self.rb.isKinematic = true
                   self.rb:AddForce( Vector3( 0,1,0 ) )
-                  Camera.main:GetComponentInParent("rigidbody_character_motor").enabled = true
+                  self.Actions.SetPlayerMovement(true)
                   self.mode = -1
                   print("Mode:"..tostring(self.mode))
                   return
@@ -148,7 +149,7 @@ function RemoteCam:Update()
             then
                   self.aimedAtTarget = nil
                   self.mode = -1
-                  Camera.main:GetComponentInParent("rigidbody_character_motor").enabled = true
+                  self.Actions.SetPlayerMovement(true)
                   print("Mode:"..tostring(self.mode))
                   return
             end
