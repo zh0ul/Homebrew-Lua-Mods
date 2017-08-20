@@ -153,8 +153,14 @@ function RemoteCam:Update()
                   print("Mode:"..tostring(self.mode))
                   return
             end
-            if self.aimedAtTarget and not Slua.IsNull(Camera.main) then Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset ; end
-            -- if self.aimedAtTarget and not Slua.IsNull(Camera.main) then HBU.TeleportPlayer(self.aimedAtTarget.transform.position) ; end
+
+            if      not self.aimedAtTarget
+            then    self.mode = -1
+            elseif  Slua.IsNull(self.aimedAtTarget)
+            then    self.aimedAtTarget = nil ; self.mode = -1
+            elseif  not Slua.IsNull(Camera.main)
+            then    Camera.main.transform.position = self.aimedAtTarget.transform.position + self.camOffset
+            end
     end
 
 
