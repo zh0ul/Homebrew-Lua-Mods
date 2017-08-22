@@ -1,5 +1,4 @@
 local Gadget={}
-function main(gameObject)  Gadget.gameObject = gameObject  return Gadget  end
 
 
 function Gadget:Awake()  
@@ -89,3 +88,5 @@ function Gadget:OnDestroy()
     self.rigidbody = nil
     self.player = nil
 end
+
+function main(gameObject)  Gadget.gameObject = gameObject  return Gadget  end

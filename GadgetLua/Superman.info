@@ -1,4 +1,10 @@
-Super-Man
-Shift + Move   :  +/- Force
-Control + Move  :  +/- Drag      
-Control + Shift : Reset Force/Drag
+Run       + Move :  Force +/-
+Control + Move :  Drag   +/-   
+Control + Run   :  Reset To Default
+Action( F )         : STOP!
+
+
+
+
+
+
