@@ -79,14 +79,17 @@ function Flashlight:Awake()
         control         = HBU.GetKey("Control"),
     }
 
-    gc.stop()
-    gc.restart()
-
+    self.sleepFramesMod = 2  -- Must be a whole number.  If set to 1, this would completely disable this script, so, don't do that.
+    self.tick           = 0
     -- for k,v in pairs(getmetatable(self.light)) do if tostring(k):sub(1,2) ~= "__" then print( string.format("%-20s  %30s  %s", tostring(v), tostring(k), tostring(self.light[k]) ) ) ; end ; end
 end
 
 
 function Flashlight:Update()
+
+    self.tick = self.tick + 1
+
+    if ( self.tick % self.sleepFramesMod == 0 ) then return end
 
     self.Variables.gc_bytes_last   = self.Variables.gc_bytes or gc.bytes()
     self.Variables.gc_bytes        = gc.bytes()

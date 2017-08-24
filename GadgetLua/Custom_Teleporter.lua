@@ -14,8 +14,10 @@ function Gadget:Awake()
   self.ringRadius            = 64
   self.teleporting           = false
   self.defaultFoV            = HBU.GetSetting("FieldOfView")
+  self.minFov                = defaultFov
+  self.maxFov                = 160
   self.GameObjects           = { "ring", "teleportNodes", "textGUI1", }
-  self.tickCount             = 0
+  self.tick                  = 0
   self:SetDefaults()
 
 end
@@ -44,8 +46,9 @@ function Gadget:OnDestroy()
 end
 
 function Gadget:Update()
-  self.tickCount = self.tickCount + 1
-  if( HBU.MayControle() == false or HBU.InSeat() or HBU.InBuilder()) then if self.tickCount % 90 == 0 then self:DestroyObjects() ; end ; return end
+  self.tick = self.tick + 1
+  if self.tick % 2 == 0 then return ; end
+  if( HBU.MayControle() == false or HBU.InSeat() or HBU.InBuilder()) then if self.tick % 90 == 0 then self:DestroyObjects() ; end ; return end
   if not self.teleporting then 
     if( self.useGadgetSecondaryKey.GetKey() > 0.5 ) then
       if not self.showing  then
@@ -255,14 +258,14 @@ function Gadget:AimCheck()
         -- tComp.text = cl.nodeName
         -- tComp.alignment = TextAnchor.MiddleCenter
         -- tComp.color = Color.white
-        self.textGUI1.text = cl.nodeName
+        if self.textGUI1 then self.textGUI1.text = cl.nodeName ; end
     else
-        self.textGUI1.text = ""
-        self.ring:GetComponent("RawImage").color = Color(0.7,0.7,0.7,0.9)
+        if self.textGUI1 then self.textGUI1.text = "" end
+        if self.ring then  self.ring:GetComponent("RawImage").color = Color(0.7,0.7,0.7,0.9)  end
     end
 
-    if cl.node     then  self.aimedAtNode             = cl.node     ; elseif self.aimedAtNode             then self.aimedAtNode             = nil ; end
-    if cl.obj      then  self.aimedAtTeleportLocation = cl.obj      ; elseif self.aimedAtTeleportLocation then self.aimedAtTeleportLocation = nil ; end
+    if cl and cl.node     then  self.aimedAtNode             = cl.node     ; elseif self.aimedAtNode             then self.aimedAtNode             = nil ; end
+    if cl and cl.obj      then  self.aimedAtTeleportLocation = cl.obj      ; elseif self.aimedAtTeleportLocation then self.aimedAtTeleportLocation = nil ; end
     if not self.aimedAtNode then self.ring:GetComponent("RawImage").color = Color(0.7,0.7,0.7) ; end
 end
 

@@ -15,8 +15,12 @@ function Superman:Awake()
                 ["Run"]                 = HBU.GetKey("Run"),
                 ["Control"]             = HBU.GetKey("Control"),
                 ["Action"]              = HBU.GetKey("Action"),
-              --["Alt"]                 = HBU.GetKey(""),
+                ["Alt"]                 = HBU.GetKey("Alt"),
+                ["Tilde"]               = { GetKey = function() if Input.GetKey(KeyCode.BackQuote) then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.BackQuote) ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.BackQuote) ; end, }
                }
+
+  self.toggleKey         = self.keys.Tilde
+
 
   self.Components        = {
                               rigidbody  = "UnityEngine.Rigidbody",
@@ -25,19 +29,6 @@ function Superman:Awake()
 
   self.Actions           = {
                             [1] = {
-                                    condition  =  function()
-                                                              if    ( HBU.MayControle    and  not HBU.MayControle()   )
-                                                              or    ( HBU.InSeat         and      HBU.InSeat()        )
-                                                              or    ( HBU.InBuilder      and      HBU.InBuilder()     )
-                                                              or    ( self.GetComponents and not self:GetComponents() )
-                                                              then  return true
-                                                              else  return false
-                                                              end
-                                                  end,
-                                    action     =  function()  self.noaction = true ; if not self.hold then self.hold = true ; self:DestroyObjects() ;  end ; end,
-                                  },
-
-                            [2] = {
                                     condition = function() return true ; end,
                                     action    = function()
                                                   if   ( self.keys.Move.GetKey() ~= 0  or self.keys.Strafe.GetKey() ~= 0  or self.keys.Jump.GetKey() ~= 0  or self.keys.Crouch.GetKey() ~= 0 )
@@ -47,37 +38,33 @@ function Superman:Awake()
                                                   end
                                                 end,
                                   },
-                            [3] = {
+                            [2] = {
                                     condition = function() if self.keys.Run.GetKey() > 0.1 and self.keys.Control.GetKey() > 0.1 then return true; end; return false; end,
                                     action    = function() for k,v in ipairs(self.Variables) do if v[1] and v[2] and type(v[6]) ~= "nil" then v[1][v[2]] = v[6] ; end; end; end,
                                   },
 
-                            [4] = {
+                            [3] = {
                                     condition = function() if self.keys.Run.GetKey() > 0.1 and ( self.keys.Move.GetKey() ~= 0 ) then return true; end; return false; end,
                                     action    = function() self.Variables.maxForce = math.max( 2000, self.Variables.maxForce + 400*self.keys.Move.GetKey() ) ; end,
                                   },
 
-                            [5] = {
+                            [4] = {
                                     condition = function() if self.keys.Control.GetKey() > 0.1 and ( self.keys.Move.GetKey() ~= 0 ) then return true; end; return false; end,
                                     action    = function() self.Variables.drag = math.max( 0, self.Variables.drag + 1*self.keys.Move.GetKey() ) ; end
                                   },
 
-                            [6] = {
+                            [5] = {
                                     condition = function() if self.keys.Action.GetKey() ~= 0  then  return true ; end; return false; end,
                                     action    = function()  self.rigidbody:AddForce( -self.rigidbody.velocity*2000 )  end,
                                   },
 
-                            [7] = {
+                            [6] = {
                                     condition  =  function() return true; end,
                                     action     =  function() self.forces.up =  ( Vector3.up * ( self.keys.Jump.GetKey() or 0 ) * self.Variables.curForce ) + ( Vector3.up * ( -self.keys.Crouch.GetKey() or 0 ) * self.Variables.curForce ) + ( Vector3.up * -1 * self.Variables.gravity * 100 ) ; self.forces.forward  =  Camera.main.transform.forward * ( self.keys.Move.GetKey()   or 0 ) * self.Variables.curForce; self.forces.strafe   =  Camera.main.transform.right   * ( self.keys.Strafe.GetKey() or 0 ) * self.Variables.curForce; self.forces.drag     =  -self.rigidbody.velocity * self.Variables.drag; local t = Vector3(0,0,0) ; for k,v in pairs(self.forces) do t = t + v ; end ; if t ~= Vector3.zero then self.rigidbody:AddForce( t )  end end,
                                   },
 
-                            -- [8] = {
-                            --         condition = function() if self.Variables and self.Variables.gravity and self.Variables.gravity ~= 0 then return true ; end ; end,
-                            --         action    = function() self.rigidbody:AddForce( Vector3.up * -1 * self.Variables.gravity * 100 ) ; end,
-                            --       },
-                            MAXFORCE_UP   = function() self.Variables.maxForce = math.max( 3000, self.Variables.maxForce + self.Variables.maxForce*0.1  ) ; end,
-                            MAXFORCE_DOWN = function() self.Variables.maxForce = math.max( 3000, self.Variables.maxForce - self.Variables.maxForce*0.1 )  ; end,
+                            MAXFORCE_UP   = function() self.Variables.maxForce = math.max( 3000, self.Variables.maxForce + self.Variables.maxForce*0.05  ) ; end,
+                            MAXFORCE_DOWN = function() self.Variables.maxForce = math.max( 3000, self.Variables.maxForce - self.Variables.maxForce*0.05 )  ; end,
                             DRAG_UP       = function() self.Variables.drag     = self.Variables.drag + 0.01 + self.Variables.drag*0.1                     ; end,
                             DRAG_DOWN     = function() self.Variables.drag     = math.max( 0, self.Variables.drag  - self.Variables.drag*0.1  )           ; end,
                             GRAVITY_UP    = function() self.Variables.gravity  = self.Variables.gravity + 0.2  end,
@@ -95,7 +82,7 @@ function Superman:Awake()
       varSelected = 0,
       saveFrame   = 5400,
 
-      disabledMouseScrollTime = false,
+      disabledMouseScrollTime = os.clock(),
 
       maxForce    = 3000,
       curForce    = 0,
@@ -126,8 +113,34 @@ function Superman:Awake()
 
   self.HUDKeysEnabled      = true
 
+  self.enabled             = true
+
+  self.disable             = false
+
   if self.SetupHUD then self:SetupHUD() ; end
 
+end
+
+
+function Superman:Enable()
+    self:Awake()
+end
+
+
+function Superman:Disable()
+    self.enabled = false
+    self:OnDestroy()
+end
+
+
+function Superman:EnableCheck()
+    if      self.disable
+    then    self:Disable() ; self.disable = false
+    elseif  (   self.enabled and  ( HBU.MayControle    and  not HBU.MayControle()   ) or ( HBU.InSeat         and      HBU.InSeat()        ) or ( HBU.InBuilder      and      HBU.InBuilder()     ) or ( self.GetComponents and not self:GetComponents() )   )
+    then    if self.textHUD1 then self.textHUD1.text = "" ; self.textHUD2.text = "" ; self.textHUD3.text = "" ; end ; return false
+    elseif  self.toggleKey.GetKeyDown() then if self.enabled then self:Disable() else self:Enable() ; return true ; end
+    end
+    return self.enabled
 end
 
 
@@ -152,6 +165,7 @@ function Superman:ProcessActions()
       if not self.noaction and v.condition and v.condition() and v.action then v.action() end
   end
 end
+
 
 function Superman:ProcessHUD()
 
@@ -187,6 +201,7 @@ function Superman:ProcessHUD()
     then
             self.Variables.disabledMouseScrollTime = false
             HBU.EnableGadgetMouseScroll()
+
     end
 
     if self.textHUD1 and self.textHUD2 and self.textHUD3
@@ -226,16 +241,16 @@ function Superman:OnDestroy()
 end
 
 function Superman:Update()
+  if not self:EnableCheck() then return ; end
   self.tick = self.tick + 1
   self.Variables.gc_bytes_last = self.Variables.gc_bytes
   self.Variables.gc_bytes      = gc.bytes()
   self.Variables.gc_frame      = self.Variables.gc_bytes - self.Variables.gc_bytes_last
-  if self.tick % 2 == 0 then return ; end
-
+  -- if self.tick % 2 == 0 then return ; end
   if not self.Variables.Loaded then self.Variables.Load() ; end -- Only actually loads variables once.  Returns quickly if already loaded.
   if self.Variables and self.Variables.saveFrame and self.tick % self.Variables.saveFrame == 0 then self.Variables.Save() end
   self:ProcessActions()
-  if self.noaction then if self.rigidmotor then self.rigidmotor.enabled = true end; return ; end
+  if self.noaction then if self.rigidmotor then self.rigidmotor.enabled = true end; if self.textHUD1 and self.textHUD1.text == "" then  self.textHUD1.text = "" ; self.textHUD2.text = "" ; self.textHUD3.text = "" ; return ; end ; end
   if not self.textHUD1 then self:SetupHUD() ; end
   if self.rigidmotor then self.rigidmotor.enabled = false; end
   self:ProcessHUD()

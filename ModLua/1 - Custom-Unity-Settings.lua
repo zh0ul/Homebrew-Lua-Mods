@@ -99,9 +99,10 @@ function getmeta_2(element,name)
         local aTab = {}
         for k,v in pairs(getmetatable(element)) do
             if  k:sub(1,2) ~= "__" then
-                if      k:sub(1,8) == "function"                        then  aTab[#aTab+1] = string.format( "%-20s  %s",tostring(v), name.."."..tostring(k) )
-                elseif  ( not getmeta_ignore or not getmeta_ignore[k] ) then  aTab[#aTab+1] = string.format( "%-20s  %-50s  %s",tostring(v), name.."."..tostring(k), tostring(element[k]) )
-                end
+                -- if      k:sub(1,8) == "function"                        then  aTab[#aTab+1] = string.format( "%-20s  %s",tostring(v), name.."."..tostring(k) )
+                -- elseif  ( not getmeta_ignore or not getmeta_ignore[k] ) then  aTab[#aTab+1] = string.format( "%-20s  %-50s  %s",tostring(v), name.."."..tostring(k), tostring(element[k]) )
+                -- end
+                aTab[#aTab+1] = string.format( "%-20s  %s",tostring(v), name.."."..tostring(k) )
             end
         end
         table.sort(aTab)
