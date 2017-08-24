@@ -17,7 +17,7 @@ function Flashlight:Awake()
     self.light.enabled               = true                                       -- Turn on light by default
     self.r,self.g,self.b,self.a      = 0.5,0.5,0.5,0.5
     self.light.color                 = Color(self.r, self.b, self.g, self.a)
-    self.objectsToDestroy            = { "obj", "textHUD1",  "textHUD2", "textHUD3", "light", }
+    self.objectsToDestroy            = { "textHUD1",  "textHUD2", "textHUD3", "light", "gameObject", "obj" }
     self:SetupHUD()
 
     self.Actions = {
@@ -36,26 +36,38 @@ function Flashlight:Awake()
         ANGLE_DOWN      = function() self.light.spotAngle = self.light.spotAngle-5              ; end,
         TYPE_UP         = function() local getNextValue,firstValue,newValue = false,false,false ; for k,v in pairs(LightType) do if not firstValue then firstValue = k  end ; if k == self.lightType then getNextValue = true ; elseif getNextValue then newValue = k ; getNextValue = false ; end ; end ; if not newValue then newValue = firstValue  end ; self.lightType = newValue ; if not LightType[self.lightType] then self.lightType = "Spot"  end;  self.light.type = LightType[self.lightType] ; end,
         TYPE_DOWN       = function() local getNextValue,lastValue,newValue  = false,false,false ; for k,v in pairs(LightType) do if k == self.lightType and lastValue then newValue = lastValue  end ; lastValue = k end ;                                                                                 if not newValue then newValue = lastValue   end ; self.lightType = newValue ; if not LightType[self.lightType] then self.lightType = "Spot"  end;  self.light.type = LightType[self.lightType] ; end,
+        TOD_TOGGLE      = function() local comp = Camera.main:GetComponent("TOD_Scattering") ; self.TODToggle = not comp.enabled ; comp.enabled = self.TODToggle ; print("TOD_Scattering",tostring(self.TODToggle)) ; if not self.TODToggle then Camera.main.farClipPlane = 10000 else Camera.main.farClipPlane = 40000 ; end ; end,
+        FOG_TOGGLE      = function() self.FOGToggle = not RenderSettings.fog ; RenderSettings.fog = self.FOGToggle ; print("fog",tostring(self.FOGToggle))  end,
     }
 
     self.Variables      = {
-        Save                         = function() for k,v in ipairs(self.Variables) do if v[1] and v[2] and type(v[1][v[2]]) ~= "nil" then HBU.SaveValue(self.Variables.SaveName,tostring(v[2]),tostring(v[1][v[2]])) ; end ; end ; end,
-        Load                         = function() if  self.Variables.Loaded  then  return end ; self.Variables.Loaded = true ; for k,v in ipairs(self.Variables) do local val,var = HBU.LoadValue( self.Variables.SaveName, tostring(v[2]) ), v[1][v[2]] ; if type(var) == "number" then v[1][v[2]] = tonumber(val) ; elseif type(var) == "boolean" then if val == "false" then v[1][v[2]] = false ; else v[1][v[2]] = true ; end ; else v[1][v[2]] = val  end ; end ; end,
+        Save                         = function() print( "Save settings for: "..tostring(self.Variables.SaveName) ) ;          for k,v in ipairs(self.Variables) do if v[1] and v[2] and type(v[1][v[2]]) ~= "nil" then HBU.SaveValue(self.Variables.SaveName,tostring(v[2]),tostring(v[1][v[2]])) ; end ; end ; end,
+        Load                         = function() if  self.Variables.Loaded  then  return end ; self.Variables.Loaded = true ; for k,v in ipairs(self.Variables) do local val,var = HBU.LoadValue( self.Variables.SaveName, tostring(v[2]) ), false ; if v[1] and v[1][v[2]] then var = v[1][v[2]] ; end ; if      type(var) == "number"  then  if val ~= "" and tonumber(val)  then v[1][v[2]] = tonumber(val) ; end ; elseif  type(var) == "boolean" then  if val == "false" then v[1][v[2]] = false ; elseif v[1] and v[2] and type(v[1][v[2]]) == "nil" and val == "" and type(v[6]) ~= "nil"  then v[1][v[2]] = v[6] ; elseif v[1] and v[2] then  v[1][v[2]] = true ; end ; elseif v[1] and v[2] then v[1][v[2]] = val  end ; end ; end,
         SaveName                     = "Flashlight",
         Loaded                       = false,
 
-        { self.light, "enabled",   "Enabled",   self.Actions.TOGGLE,         self.Actions.TOGGLE,         },
-        { self,       "r",         "Red",       self.Actions.R_DOWN,         self.Actions.R_UP,           },
-        { self,       "g",         "Green",     self.Actions.G_DOWN,         self.Actions.G_UP,           },
-        { self,       "b",         "Blue",      self.Actions.B_DOWN,         self.Actions.B_UP,           },
-        { self.light, "intensity", "Intensity", self.Actions.INTENSITY_DOWN, self.Actions.INTENSITY_UP,   },
-        { self.light, "range",     "Range",     self.Actions.RANGE_DOWN,     self.Actions.RANGE_UP,       },
-        { self.light, "spotAngle", "Angle",     self.Actions.ANGLE_DOWN,     self.Actions.ANGLE_UP,       },
-        { self,       "lightType", "Type",      self.Actions.TYPE_DOWN,      self.Actions.TYPE_UP,        },
+        { self.light, "enabled",   "Enabled",    self.Actions.TOGGLE,         self.Actions.TOGGLE,       true,         },
+        { self,       "r",         "Red",        self.Actions.R_DOWN,         self.Actions.R_UP,         1,            },
+        { self,       "g",         "Green",      self.Actions.G_DOWN,         self.Actions.G_UP,         1,            },
+        { self,       "b",         "Blue",       self.Actions.B_DOWN,         self.Actions.B_UP,         1,            },
+        { self.light, "intensity", "Intensity",  self.Actions.INTENSITY_DOWN, self.Actions.INTENSITY_UP, 3,            },
+        { self.light, "range",     "Range",      self.Actions.RANGE_DOWN,     self.Actions.RANGE_UP,     300,          },
+        { self.light, "spotAngle", "Angle",      self.Actions.ANGLE_DOWN,     self.Actions.ANGLE_UP,     60,           },
+        { self,       "lightType", "Type",       self.Actions.TYPE_DOWN,      self.Actions.TYPE_UP,      "Spot",       },
+        { self,       "TODToggle", "TOD Toggle", self.Actions.TOD_TOGGLE,     self.Actions.TOD_TOGGLE,   Camera.main:GetComponent("TOD_Scattering").enabled, },
+        { self,       "FOGToggle", "FOG Toggle", self.Actions.FOG_TOGGLE,     self.Actions.FOG_TOGGLE,   RenderSettings.fog },
 
-        index       = 1,
-        varSelected = 0,
+        index          = 1,
+        varSelected    = 0,
+
+        gc_bytes       = 0,
+        gc_setstepmul  = 0,
+        gc_bytes_frame = 0,
+        gc_bytes_last  = 0,
     }
+
+    self.Variables[#self.Variables+1] = { self.Variables,   "gc_bytes",      "GC:Bytes",    nil, nil, 0, }
+    self.Variables[#self.Variables+1] = { self.Variables,   "gc_bytes_frame",  "GC:PerFrame", nil, nil, 0, }
 
     self.keys           = {
         lmb             = HBU.GetKey("UseGadget"),
@@ -67,11 +79,19 @@ function Flashlight:Awake()
         control         = HBU.GetKey("Control"),
     }
 
+    gc.stop()
+    gc.restart()
+
     -- for k,v in pairs(getmetatable(self.light)) do if tostring(k):sub(1,2) ~= "__" then print( string.format("%-20s  %30s  %s", tostring(v), tostring(k), tostring(self.light[k]) ) ) ; end ; end
 end
 
 
 function Flashlight:Update()
+
+    self.Variables.gc_bytes_last   = self.Variables.gc_bytes or gc.bytes()
+    self.Variables.gc_bytes        = gc.bytes()
+    self.Variables.gc_bytes_frame  = self.Variables.gc_bytes - self.Variables.gc_bytes_last
+    self.Variables.gc_per_frame    = gc.setstepmul()
 
     if    ( HBU.MayControle() == false  or  HBU.InBuilder() )
     or    not  self.keys
@@ -85,18 +105,12 @@ function Flashlight:Update()
 
     self.Variables.Load()
 
-    -- if      ( not HBU.InSeat()  or  self.keys.control.GetKey() > 0.5 )
-    -- and     self.keys.lmb.GetKeyDown()    and     self.keys.rmb.GetKey() < 0.5   and   self.Variables.varSelected == 0
-    -- then
-    --         self.light.enabled = not self.light.enabled
-    --         self.textHUD1.text,self.textHUD2.text,self.textHUD3.text = "","",""
-
     if  ( not HBU.InSeat()  or  self.keys.control.GetKey() > 0.5 )
     and     self.keys.rmb.GetKey() > 0.5  or  self.Variables.varSelected ~= 0
     then
             HBU.DisableGadgetMouseScroll() ; self.Variables.disabledMouseScrollTime = os.clock()
 
-            if    self.keys.lmb.GetKeyDown()
+            if    self.keys.lmb.GetKeyDown() or self.keys.rmb.GetKeyDown()
             then
                   if      self.Variables.varSelected == 0
                   then
@@ -115,9 +129,8 @@ function Flashlight:Update()
                   if    Input.GetAxis("Mouse ScrollWheel") < 0  then if self.Variables.varSelected == 0 then self.Variables.index =   self.Variables.index % #self.Variables + 1                         ; self.Variables.selected = self.Variables[self.Variables.index] ; elseif self.Variables.selected[4] then self.Variables.selected[4]()  end ; end
                   if    Input.GetAxis("Mouse ScrollWheel") > 0  then if self.Variables.varSelected == 0 then self.Variables.index = ( self.Variables.index + #self.Variables - 2 ) % #self.Variables + 1 ; self.Variables.selected = self.Variables[self.Variables.index] ; elseif self.Variables.selected[5] then self.Variables.selected[5]()  end ; end
             end
-    end
 
-    if      self.keys.rmb.GetKeyUp() and self.Variables.varSelected == 0 and self.Variables.prevColor
+    elseif  self.keys.rmb.GetKey() == 0 and self.Variables.varSelected == 0 and self.Variables.prevColor
     then
             self.textHUD3.color      = self.Variables.prevColor
             self.Variables.prevColor = false
@@ -153,21 +166,21 @@ end
 
 function Flashlight:DestroyObjects()
   for k,v in pairs(self.objectsToDestroy) do
-    if    v  and  self[v]  and  self[v].gameObject
+    if    v  and  self[v]  and not Slua.IsNull(self[v])
     then  GameObject.Destroy(self[v])
     end
   end
 end
-
 
 function Flashlight:SetupHUD()
     local parent  = HBU.menu.transform:Find("Foreground").gameObject
     for k,v in pairs({"textHUD1","textHUD2","textHUD3",}) do
       --if Font then  Font.font = Font.CreateDynamicFontFromOSFont({"consolas","Roboto","Arial"}, 12)  end
         self[v]        = HBU.Instantiate("Text",parent):GetComponent("Text")
-        HBU.LayoutRect(self[v].gameObject,Rect( 5+((k-1)*80), 35, 300, 200 ) )
+        HBU.LayoutRect(self[v].gameObject,Rect( 5+((k-1)*80), 50, 200, 200 ) )
         self[v].color  = Color( math.floor( (k) % 2 ), math.floor(k/2) % 2, math.floor(k/4) % 2, 1)
         self[v].text   = ""
+        if Font then  self[v].font = Font.CreateDynamicFontFromOSFont({"consolas","Roboto","Arial"}, 12)  end
     end
 end
 

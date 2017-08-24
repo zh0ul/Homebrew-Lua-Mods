@@ -53,10 +53,11 @@ function RemoteCam:Awake()
        Ring3                 = HBU.LoadTexture2D(self.Path.modlua_user.."RemoteCamRing3.png"),
   }
 
-  self.GameObjects           = {  "TargetNodes", "ring1", "ring2", "ring3", "textGUI1", "textGUI2", "textGUI3" }
+  self.GameObjects           = {  "TargetNodes", "ring1", "ring2", "ring3", "textGUI1", "textGUI2", "textGUI3", }
   self.TargetNodes           = {}
   if GetAllTeleportLocations then self.TeleportLocations = GetAllTeleportLocations() ; end --- HBU.GetTeleportLocations()
   self.hbplayer              = Camera.main:GetComponent("HBPlayer")
+  self.ringRadius            = 64
   self.tickCount             = 0
   self.teleportLocations     = HBU.GetTeleportLocations()
   self:SetDefaults()
@@ -89,20 +90,17 @@ function RemoteCam:Update()
 
     if    HBU.InBuilder()
   --or    not HBU.MayControle()
-    then  if self.player then self.player = nil ; end ; if self.rb then self.rb = nil ; end ; if self.tickCount % 90 == 0 then self:DestroyObjects() ; end ; return
+    then  if self.player then self.player = nil ; end ; if self.rb then self.rb = nil ; end ; if self.tickCount % 90 == 0 then self:DestroyObjects() ; self:SetDefaults(); end ; return
     end
 
     if    not self.player or Slua.IsNull(self.player) then self.player = GameObject.Find("Player") ; end
     if    not self.rb     or Slua.IsNull(self.rb)     and  self.player  then self.rb = self.player.gameObject:GetComponent("Rigidbody") ; end
 
-    if    self.mode == -1 then self.mode = 0 ; self.Actions.SetPlayerMovement(true) ; return ; end
+    if    self.mode == -1 then self.mode = 0 ; self.Actions.SetPlayerMovement(true) ; if  self.aimedAtTarget then  self.aimedAtTarget = false  end ; return ; end
 
     if    self.keys.tilde.GetKeyDown()
     and   self.mode == 0
     then
-          if  self.aimedAtTarget then
-              self.aimedAtTarget = nil
-          end
           -- self.Actions.SetCam()
           self:SetDefaults()
           self:GetAllVehicleParts()
@@ -128,7 +126,6 @@ function RemoteCam:Update()
     elseif  ( self.mode == 1 and self.keys.tilde.GetKey() == 0 )
     or      self.mode == 2
     then
-        --self:SetDefaults()
           if not self.aimedAtTarget then self.mode = -1 ; HBU.EnableGadgetMouseScroll() else self.mode = 3 ; HBU.DisableGadgetMouseScroll() ; end
           self.originalLoc  = self.rb.transform.position
           self.wasInVehicle = HBU.InSeat()
@@ -177,17 +174,17 @@ function RemoteCam:CreateTargetNodes()
   local parent = HBU.menu.transform:Find("Foreground").gameObject
 
   self.ring1 = HBU.Instantiate("RawImage",parent)
-  HBU.LayoutRect(self.ring1,Rect((Screen.width*0.5)-128,(Screen.height*0.5)-128,256,256))
+  HBU.LayoutRect( self.ring1, Rect( (Screen.width*0.5)-self.ringRadius, (Screen.height*0.5)-self.ringRadius,self.ringRadius*2,self.ringRadius*2))
   self.ring1:GetComponent("RawImage").texture = self.Images.Ring1
   self.ring1:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
 
   self.ring2 = HBU.Instantiate("RawImage",parent)
-  HBU.LayoutRect(self.ring2,Rect((Screen.width*0.5)-128,(Screen.height*0.5)-128,256,256))
+  HBU.LayoutRect( self.ring2, Rect( (Screen.width*0.5)-self.ringRadius, (Screen.height*0.5)-self.ringRadius,self.ringRadius*2,self.ringRadius*2))
   self.ring2:GetComponent("RawImage").texture = self.Images.Ring2
   self.ring2:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
 
   self.ring3 = HBU.Instantiate("RawImage",parent)
-  HBU.LayoutRect(self.ring3,Rect((Screen.width*0.5)-128,(Screen.height*0.5)-128,256,256))
+  HBU.LayoutRect( self.ring3, Rect( (Screen.width*0.5)-self.ringRadius, (Screen.height*0.5)-self.ringRadius,self.ringRadius*2,self.ringRadius*2))
   self.ring3:GetComponent("RawImage").texture = self.Images.Ring3
   self.ring3:GetComponent("RawImage").color = Color(0.5,0.5,0.5,0.5)
 
@@ -198,16 +195,16 @@ function RemoteCam:CreateTargetNodes()
       node.transform.anchorMax = Vector2(0.5,0.5)
       node.transform.sizeDelta = Vector2(32,32)
       local canvasGroup = node:AddComponent("UnityEngine.CanvasGroup")
-      canvasGroup.alpha = 0.2
+      canvasGroup.alpha = 0.3
       
-      local img = HBU.Instantiate("RawImage",node)
-      img.name = "WormHole"
-      img.transform.anchorMin = Vector2.zero
-      img.transform.anchorMax = Vector2.one
-      img.transform.offsetMin = Vector2.zero
-      img.transform.offsetMax = Vector2.zero
-      img:GetComponent("RawImage").texture = self.Images.Wormhole1
-      img:GetComponent("RawImage").color = i.color
+      -- local img = HBU.Instantiate("RawImage",node)
+      -- img.name = "WormHole"
+      -- img.transform.anchorMin = Vector2.zero
+      -- img.transform.anchorMax = Vector2.one
+      -- img.transform.offsetMin = Vector2.zero
+      -- img.transform.offsetMax = Vector2.zero
+      -- img:GetComponent("RawImage").texture = self.Images.Wormhole1
+      -- img:GetComponent("RawImage").color = i.color
       
       local img2 = HBU.Instantiate("RawImage",node)
       img2.name = "WormHole2"
@@ -237,14 +234,14 @@ function RemoteCam:CreateTargetNodes()
         local canvasGroup = node:AddComponent("UnityEngine.CanvasGroup")
         canvasGroup.alpha = 0.5
 
-        local img = HBU.Instantiate("RawImage",node)
-        img.name = "WormHole"
-        img.transform.anchorMin = Vector2.zero
-        img.transform.anchorMax = Vector2.one
-        img.transform.offsetMin = Vector2.zero
-        img.transform.offsetMax = Vector2.zero
-        img:GetComponent("RawImage").texture = self.Images.Wormhole1
-        img:GetComponent("RawImage").color = curColor
+        -- local img = HBU.Instantiate("RawImage",node)
+        -- img.name = "WormHole"
+        -- img.transform.anchorMin = Vector2.zero
+        -- img.transform.anchorMax = Vector2.one
+        -- img.transform.offsetMin = Vector2.zero
+        -- img.transform.offsetMax = Vector2.zero
+        -- img:GetComponent("RawImage").texture = self.Images.Wormhole1
+        -- img:GetComponent("RawImage").color = curColor
         
         local img2 = HBU.Instantiate("RawImage",node)
         img2.name = "WormHole2"
@@ -296,6 +293,7 @@ function RemoteCam:AimCheck()
     end
     if    ang and ang < closestAngle then
           closestAngle  = ang
+          if closestNode then closestNode.transform.sizeDelta = Vector2(32,32) ; end
           closestNode   = v[1]
           closestTarget = v[2]
           if v and v[5] then closestNodeName    = v[5] elseif v[2] and v[2].locationName  then  closestNodeName    = v[2].locationName ; end
@@ -373,6 +371,8 @@ function RemoteCam:SetupGUI()
         HBU.LayoutRect(self[v].gameObject,Rect((Screen.width/2)-100+((k-1)*100),200,100,200))
         self[v].color = Color((k%2),((k+1)%2),((k-1)%2),1)
         self[v].text = ""
+        if Font then  self[v].font = Font.CreateDynamicFontFromOSFont({"consolas","Roboto","Arial"}, 12)  end
+
     end
 end
 
@@ -382,9 +382,9 @@ function RemoteCam:DestroyObjects(t,selfCall)
     elseif  type(t) == "string"   and  self[t]                               then  if self:DestroyObjects(self[t],true) then if type(self[t]) == "table" and #self[t] > 0 then self[t] = {} ; else self[t] = nil ; end ; return true ; end
     elseif  type(t) == "table"    and  type(t[1]) == "userdata"
      --and  ( type(t[2]) == "nil" or type(t[2]) ~= "userdata" )
-       and  not Slua.IsNull(t[1])                                            then  GameObject.Destroy(t[1]) ; return true
+       and  not Slua.IsNull(t[1])                                            then  GameObject.Destroy(t[1].gameObject) ; return true
     elseif  type(t) == "table"                                               then  local ret = false ; for k,v in pairs(t) do if self:DestroyObjects(v,true) then ret = true ; end ; end return ret
-    elseif  type(t) == "userdata" and not Slua.IsNull(t)                     then  GameObject.Destroy(t) ; return true
+    elseif  type(t) == "userdata" and not Slua.IsNull(t)                     then  GameObject.Destroy(t.gameObject) ; return true
     else    return false
     end
     return false
