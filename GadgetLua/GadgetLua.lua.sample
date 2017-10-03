@@ -1,0 +1,449 @@
+local Quandro = {}
+
+
+function Quandro:Awake()
+
+  print("Quandro:Awake()")
+
+  self.debug                = false
+
+  self.userDataPath         = HBU.GetUserDataPath()
+
+  self.useTextureCacheTable = false
+
+  self.keys                 = {
+
+      -- HBU.DisableGadgetMouseScroll()    Use these to disable/enable Gadget Selection.
+      -- HBU.EnableGadgetMouseScroll()     (ex: when placing a vehicle, use Disable so ZoomIn/ZoomOut can be used to change spawn distance)
+
+      lmb              = HBU.GetKey("UseGadget"),
+      rmb              = HBU.GetKey("UseGadgetSecondary"),
+      mmb              = { GetKey = function() if Input.GetKey(KeyCode.Mouse2)       then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.Mouse2)     ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.Mouse2)     ; end, },
+      mouse3           = { GetKey = function() if Input.GetKey(KeyCode.Mouse3)       then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.Mouse3)     ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.Mouse3)     ; end, },
+      mouse4           = { GetKey = function() if Input.GetKey(KeyCode.Mouse4)       then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.Mouse4)     ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.Mouse4)     ; end, },
+    --zoomIn           = HBU.GetKey("ZoomIn"),   -- Only works when in vehicle, so pretty pointless.
+    --zoomOut          = HBU.GetKey("ZoomOut"),  -- Only works when in vehicle, so pretty pointless.
+    --escape           = HBU.GetKey("Escape"),
+      shift            = HBU.GetKey("Shift"),
+      control          = HBU.GetKey("Control"),
+    --alt              = HBU.GetKey("Alt"),
+    --submit           = HBU.GetKey("Submit"),                      -- Default: Enter
+    --move             = HBU.GetKey("Move"),                        -- Default: W / S
+    --strafe           = HBU.GetKey("Strafe"),                      -- Default: D / A
+    --jump             = HBU.GetKey("Jump"),                        -- Default: Space
+      run              = HBU.GetKey("Run"),                         -- Default: Left-Shift
+    --crouch           = HBU.GetKey("Crouch"),                      -- Default: C
+    --ChangeCameraView = HBU.GetKey("ChangeCameraView"),            -- Default: V
+    --ChangeThirdView  = HBU.GetKey("ChangeThirdPersonCameraMode"), -- Default: B
+    --navback          = HBU.GetKey("NavigateBack"),                -- Default: Escape
+    --action           = HBU.GetKey("Action"),                      -- Default: F
+    --inventory        = HBU.GetKey("Inventory"),                   -- Default: I
+    --showcontrols     = HBU.GetKey("ShowControls"),                -- Default: F1
+    --flipvehicle      = HBU.GetKey("flipVehicle"),                 -- Default: L
+    --tilde            = { GetKey = function() if Input.GetKey(KeyCode.BackQuote)  then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.BackQuote)  ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.BackQuote)  ; end, },
+    --arrowl           = { GetKey = function() if Input.GetKey(KeyCode.LeftArrow)  then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.LeftArrow)  ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.LeftArrow)  ; end, },
+    --arrowr           = { GetKey = function() if Input.GetKey(KeyCode.RightArrow) then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.RightArrow) ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.RightArrow) ; end, },
+    --arrowu           = { GetKey = function() if Input.GetKey(KeyCode.UpArrow)    then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.UpArrow)    ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.UpArrow)    ; end, },
+    --arrowd           = { GetKey = function() if Input.GetKey(KeyCode.DownArrow)  then return 1 else return 0 ; end ; end, GetKeyDown = function() return Input.GetKeyDown(KeyCode.DownArrow)  ; end,  GetKeyUp = function() return Input.GetKeyDown(KeyCode.DownArrow)  ; end, },
+      wheel            = { KeyUpData = { { tick = 0, }, { tick = 0, }, }, GetKey = function() return ( Input.GetAxis("Mouse ScrollWheel") * -1 ) ; end, GetKeyDown = function() local r = {false,false,false} ; local v = Input.GetAxis("Mouse ScrollWheel") ; if v ~= 0 then r[1] = true end ; if v > 0 then r[2] = true end ; if v < 0 then r[3] = true end ; return unpack(r) ; end,  GetKeyUp = function() if not self or not self.keys or not self.keys.wheel or not self.keys.wheel.KeyUpData or not self.tick then return false ; end ; local a_index,b_index = (self.tick-1)%2+1,(self.tick)%2+1 ; local d = self.keys.wheel.KeyUpData ; if self.tick ~= d[b_index].tick then d[b_index].tick = self.tick ; for k,v in pairs({self.keys.wheel.GetKeyDown()}) do d[b_index][k] = v ; end ; end ; if d[a_index].tick == self.tick - 1 then return d[a_index][1],d[a_index][2],d[a_index][3] ; else return false,false,false  ; end ; end, },
+  }
+
+  self.error_image_file   = Application.persistentDataPath .. "/Lua/GadgetLua/Quandro.png"
+
+  if   TextureCache and TextureCache.error_image
+  then self.error_image   = TextureCache.error_image
+  else self.error_image   = HBU.LoadTexture2D(self.error_image_file)
+  end
+
+  self.textureCacheTick   = 1
+
+  self.ObjectsToDestroy   = {}
+
+  self.visible            = false
+
+  self.imageCountDefault  = 7
+  self.imageCount         = self.imageCountDefault
+  self.imageRadiusDefault = 160
+  self.imageRadius        = self.imageRadiusDefault
+
+  if     self.imageCount  * (self.imageRadius*2) > Screen.width
+  then
+        self.imageRadius  = math.floor(Screen.width/self.imageCount/2)
+        print("Quandro : INFO : self.imageRadius adjusted to Screen.width("..tostring(Screen.width)..") / self.imageCount("..tostring(self.imageCount)..") / 2 = "..tostring(self.imageRadius))
+  end
+
+  self.updateClockStart   = os.clock()
+  self.updateClockEnd     = os.clock()
+  self.updateClockTotal   = self.updateClockEnd - self.updateClockStart
+
+  self.tick               = 0
+
+  if    not TextureCache
+  then  TextureCache = { error_image = self.error_image, all_vehicle_images_cached = false, }
+  end
+
+  if TextureCache and TextureCache.SelectedHBA    then self.SelectedHBA   = TextureCache.SelectedHBA   ; end
+  if TextureCache and TextureCache.SelectedImage  then self.SelectedImage = TextureCache.SelectedImage ; end
+  if TextureCache and TextureCache.SID            then self.SID           = TextureCache.SID           ; end
+
+  TextureCache.startTime = os.clock()
+
+--HBU.DeleteDirectory(self.userDataPath.."/img_cache")
+  HBU.CreateDirectory(self.userDataPath.."/img_cache/")
+
+end
+
+
+function Quandro:GetVehicleImageList(filter)
+  filter = string.lower(tostring(filter or ""))
+  local path = Application.persistentDataPath.."/userData"
+  local file = path.."/ref.hbr"
+  local r    = {}
+  local func = function(inp) inp = string.gsub(inp,"<[^>]*>","") ; if not string.find(inp,"[.][Pp][Nn][Gg]") or not string.find(inp,"Vehicle/") or ( filter and filter ~= "" and not string.find(string.lower(inp),filter) ) then return ; end ; r[#r+1] = path.."/"..inp ; end
+--forLineIn(file,func,suppressBlankLines,trimEdgeWhiteSpace,trimAllWhiteSpace)
+  forLineIn(file,func,true,true,false)
+  table.sort(r)
+  return r
+end
+
+
+function Quandro:GetImageHash(file)
+    local r = ""
+    if type(file) ~= "string" then return r ; end
+    if not file_exists(file) then print("Quandro:GetImageHash() : ERROR : File does not exist: "..file) ; return r ; end
+    local f = io.open(file,"rb")
+    if not f then print("Quandro:GetImageHash() : ERROR : Could not open file: "..file)  ; return r ; end
+  --if  f:seek("set",63) then  for i = 1,16 do r = r..string.format( "%02X", string.byte(f:read(1)) ) ; end ; end
+    for j = 1,4 do
+    if  f:seek("set",64*j-1) then
+        for i = 1,4 do r = r..string.format( "%02X", string.byte(f:read(1)) ) ; end
+    end
+    end
+    io.close(f)
+    return r
+end
+
+
+function Quandro:ScaleTexture(texIn,nWidth,nHeight,transColor)
+  if not texIn or Slua.IsNull(texIn) or not texIn.format or not texIn.height or not texIn.width then return texIn ; end
+  nWidth,nHeight = nWidth or 256, nHeight or 256
+  local oWidth,oHeight,texOut = texIn.width,texIn.height,Texture2D.Instantiate(Texture2D.blackTexture)
+  if not texOut or Slua.IsNull(texOut) then return texIn end
+  texOut:Resize(nWidth,nHeight)
+  for y = 0,nHeight-1 do
+  for x = 0,nWidth-1  do
+      local vx,vy = math.floor(oWidth/nWidth*x),math.floor(oHeight/nHeight*y)
+      local p = texIn:GetPixel(vx,vy)
+      if p and transColor and p.r == transColor and p.g == transColor and p.b == transColor then
+        p.a = 0
+      end
+      if p then texOut:SetPixel(x, y, p) end
+  end
+  end
+  texOut:Apply()
+  GameObject.Destroy(texIn)
+  return texOut
+end
+
+
+function Quandro:SetTextureColorTransparent(texture,transColor)
+  if not texture or Slua.IsNull(texture) or not texture.format or not texture.height or not texture.width then return texture ; end
+  transColor = transColor or 0.35294118523597717
+  for y = 0, texture.height-1, 1 do
+  for x = 0, texture.width-1,  1 do
+      local p = texture:GetPixel(x,y)
+      if p and p.r == transColor and p.g == transColor and p.b == transColor then
+        p.a = 0
+        texture:SetPixel(x, y, p)
+      end
+  end
+  end
+  texture:Apply(true,false)
+  return texture
+end
+
+
+function Quandro:ImageFileToCache(file,cache_file,file_hash)
+  if    not file or not cache_file or not file_hash then return false end
+  local texture = HBU.LoadTexture2D(file)
+  if not TextureCache then TextureCache = {} ; end
+  if not TextureCache.error_image and self.error_image then TextureCache.error_image = self.error_image end
+  if    ( not texture or Slua.IsNull(texture) ) and TextureCache and TextureCache.error_image then texture = TextureCache.error_image ; end
+  if    not texture or Slua.IsNull(texture)
+  then  return false
+  end
+  local transColor = 0.35294118523597717
+  if  texture.height > 256 or texture.width > 256
+  then
+      if self.debug then print("Quandro : Resizing texture because its bigger than 256x256 ("..tostring(texture.width).."x"..tostring(texture.height)..") : "..tostring(file)) ; end
+      texture = self:ScaleTexture(texture,256,256,transColor)
+  else
+      texture = self:SetTextureColorTransparent(texture,transColor)
+  end
+  if self.useTextureCacheTable and texture and TextureCache[file_hash] then GameObject.Destroy(TextureCache[file_hash]) ; end
+  if self.useTextureCacheTable then  TextureCache[file_hash] = texture  end
+  if texture then HBU.SaveTexture2D(texture, cache_file) ; end
+  return texture
+end
+
+
+function Quandro:GetImage(file,x,y,w,h,c)
+
+  if type(file) ~= "string" then return false ; end
+
+  x,y,w,h,c = x or (Screen.width*0.5), y or (Screen.height*0.85), w or self.imageRadius*2, h or self.imageRadius*2, c or Color.red
+
+  local text = string.gsub(file,".*/","")
+  text       = string.gsub(text,"_img[.][Pp][Nn][Gg]","")
+
+
+  local file_hba   = string.gsub(file,"_[Ii][Mm][Gg].[Pp][Nn][Gg]",".hba")
+  local file_name  = HBU.GetFileName(file)
+  local file_hash  = self:GetImageHash(file)
+  local cache_file = self.userDataPath .. "/img_cache/" .. file_hash .. ".png"
+  local texture    = false
+
+  if      file_hash == "" and TextureCache and TextureCache.error_image
+  then    texture = TextureCache.error_image  ; if self.debug then print("Quandro : Texture from error_image") ; end
+  elseif  self.useTextureCacheTable and TextureCache and TextureCache[file_hash]
+  then    texture = TextureCache[file_hash]  ; if self.debug then print("Quandro : Texture from existing TextureCache Table") ; end
+  elseif  file_exists(cache_file)
+  then    texture = HBU.LoadTexture2D(cache_file) ; if texture and self.useTextureCacheTable and not TextureCache[file_hash] then TextureCache[file_hash] = texture ; end ; if self.debug then print("Quandro : Texture from cache_file") ; end
+  else    texture = self:ImageFileToCache(file,cache_file,file_hash) ; if self.debug then print("Quandro : Texture from ImageFileToCache") ; end
+  end
+
+  if not texture and TextureCache and TextureCache.error_image then
+    print("Quandro : Failed to find cached version of "..file_name.." at: "..cache_file)
+    texture = TextureCache.error_image
+  end
+
+  if not texture then print("Quandro : ERROR : texture is empty for file "..file) ; return false ; end
+
+  if not self.parent or Slua.IsNull(self.parent) then  self.parent = HBU.menu.transform:Find("Foreground").gameObject ; end
+
+  if not self.parent then print("Quandro : ERROR : GetImage() cant find suitable parent.") ; return false ; end
+
+  local newImage = HBU.Instantiate("RawImage",parent)
+  HBU.LayoutRect( newImage, Rect( x, y, w, h ) )
+  newImage:GetComponent("RawImage").texture = texture
+  newImage:GetComponent("RawImage").color   = Color(1,1,1,1)
+  newImage.transform.pivot                  = Vector2(0.5,0.5)
+
+  local newText           = HBU.Instantiate("Text",newImage):GetComponent("Text")
+  newText.alignment       = TextAnchor.MiddleCenter
+  newText.fontSize        = 15
+  newText.text            = text
+  newText.color           = c
+  newText.transform.pivot = Vector2(0.5,1-h*0.022)
+
+  self.ObjectsToDestroy[#self.ObjectsToDestroy+1] = newImage
+  self.ObjectsToDestroy[#self.ObjectsToDestroy+1] = newText
+
+  if not self.useTextureCacheTable then self.ObjectsToDestroy[#self.ObjectsToDestroy+1] = texture ; end
+
+  local  r = { texture = newImage, text = newText }
+  return r
+
+end
+
+
+function Quandro:SelectImage(imageID)
+    if type(imageID) ~= "number" or not self.ImageList or #self.ImageList == 0 then return ; end
+    if not self.ImageList.Image then self.ImageList.Image = {} ; end
+    self:DestroyObjects()
+    self.SID = (imageID-1)%(#self.ImageList)+1
+    local file_hba = self.ImageList[self.SID]
+    file_hba = string.gsub(file_hba,"_[Ii][Mm][Gg].[Pp][Nn][Gg]",".hba")
+    self.SelectedHBA   = file_hba
+    self.SelectedImage = self.ImageList[self.SID]
+    if TextureCache then TextureCache.SelectedHBA = file_hba ; TextureCache.SelectedImage = self.ImageList[self.SID] ; TextureCache.SID = self.SID ; end
+    for i = self.SID-(math.floor(self.imageCount/2)),self.SID-(math.floor(self.imageCount/2))+self.imageCount-1,1
+    do
+        local locali  = (self.SID - i)*-1
+        local x,y,w,h,c = ( Screen.width*0.5+(locali*self.imageRadius*2) ), (Screen.height*0.85), self.imageRadius*2, self.imageRadius*2, Color.red
+        if locali == 0 then c = Color.yellow ; end
+        self.ImageList.Image[(i-1)%#self.ImageList+1] = self:GetImage(self.ImageList[(i-1)%#self.ImageList+1],x,y,w,h,c)
+    end
+  --transform.anchoredPosition
+end
+
+
+function Quandro:DestroyObjects()
+    if not self.ObjectsToDestroy or #self.ObjectsToDestroy == 0 then return ; end
+    for i = #self.ObjectsToDestroy,1,-1
+    do
+        if    self.ObjectsToDestroy[i]
+        then
+            local v = self.ObjectsToDestroy[i]
+            if    v and not Slua.IsNull(v)
+            then
+                  if      string.sub(tostring(v),-23) == "(UnityEngine.Texture2D)"
+                  then    GameObject.Destroy(v)
+                  elseif  v.gameObject
+                  then    GameObject.Destroy(v.gameObject)
+                  else    GameObject.Destroy(v)
+                  end
+            end
+        end
+    end
+    self.ObjectsToDestroy = {}
+end
+
+
+function Quandro:ClearTextureCache()
+    if not TextureCache then return ; end
+    if self.debug then print("Quandro : ClearTextureCache("..tostring(table.count(TextureCache))..")") ; end
+    local keysToRemove = {}
+    for k,v in pairs(TextureCache) do if type(k) == "string" and #k == 32 and v then  keysToRemove[#keysToRemove+1] = k ; if type(v) == "userdata" and not Slua.IsNull(v) then GameObject.Destroy(v) ; end ; end ; end
+    for k,v in pairs(keysToRemove) do if TextureCache[v] then TextureCache[v] = false ; end ; end
+end
+
+
+function Quandro:CacheImagesTick()
+
+    if not TextureCache then TextureCache = {} ; end
+
+    if not TextureCache.error_image and self.error_image then TextureCache.error_image = self.error_image end
+
+    if TextureCache.all_vehicle_images_cached then return ; end
+
+    if not self.CacheAllImages then self.CacheAllImages = self:GetVehicleImageList() end
+
+    if not self.CacheAllImagesHashes then self.CacheAllImagesHashes  = {} ; end
+
+    self.CacheAllImages.index = ( self.CacheAllImages.index or 0 ) + 1
+
+    if  self.CacheAllImages.index > #self.CacheAllImages
+    then
+        if TextureCache then TextureCache.all_vehicle_images_cached = true ; end
+        TextureCache.endTime = os.clock()
+        if TextureCache.startTime then TextureCache.totalTime = TextureCache.endTime - TextureCache.startTime ; end
+        if string2file then string2file( table.concat(self.CacheAllImagesHashes,"\r\n"), self.userDataPath.."/img_cache/img_cache.txt", "w" ) end
+        if self:DeployCleanupScript() then self:ExecuteCleanupScript() end
+        self.CacheAllImages       = false
+        self.CacheAllImagesHashes = false
+        print("Quandro : All Images Cached. ("..tostring(TextureCache.totalTime).."s)")
+        return
+    end
+
+    if not self.CacheAllImages[self.CacheAllImages.index] then return ; end
+
+    local file       = self.CacheAllImages[self.CacheAllImages.index]
+    local file_hash  = self:GetImageHash(file)
+    local cache_file = self.userDataPath .. "/img_cache/" .. file_hash .. ".png"
+
+    if file_hash == "" then return ; end
+
+    self.CacheAllImagesHashes[#self.CacheAllImagesHashes+1] = file_hash
+
+    if    not TextureCache[file_hash] and file_exists(cache_file)
+    then
+          if self.useTextureCacheTable
+          then
+              local texture = HBU.LoadTexture2D(cache_file)
+              if texture then TextureCache[file_hash] = texture ; end
+          end
+          if self.debug then print("Quandro : Texture from cache_file") end
+    end
+
+    if    self.useTextureCacheTable  and  not TextureCache[file_hash] then  self:ImageFileToCache(file,cache_file,file_hash) ;  if self.debug then print("Quandro : Texture from ImageFileToCache") ; end ; end
+
+end
+
+
+function Quandro:ChangeImageCount(count)
+    count = count or self.imageCountDefault
+    count = math.max( 1,  count )
+    local radius = self.imageRadiusDefault
+    if count*radius*2 > Screen.width then radius = math.floor(Screen.width/count/2) ; end
+    print("Quandro : ChangeImageCount : count="..tostring(count).."  radius="..tostring(radius))
+    self.imageCount  = count
+    self.imageRadius = radius
+    if self.SID and self.SID > 0 then self:SelectImage(self.SID) ; end
+end
+
+function Quandro:Update()
+
+  self.updateClockStart = os.clock()
+
+  self.tick = self.tick + 1
+
+  if HBU.InBuilder() then self:DestroyObjects() ; return ; end
+
+  if      self.keys.rmb.GetKey() > 0.1
+  then    if not self.visible then self.visible = true ; end
+
+  elseif  self.visible
+  then 
+          self.visible   = false
+          self.ImageList = false
+          if      not self.useTextureCacheTable and TextureCache then self:ClearTextureCache()  ; end
+          HBU.EnableGadgetMouseScroll()
+  end
+
+  if      self.visible
+  then
+          if    not self.ImageList
+          then
+                HBU.DisableGadgetMouseScroll()
+                self.ImageList = self:GetVehicleImageList()
+                if not self.ImageList or not self.ImageList[1] then print("Quandro : ERROR : Unable to get image list for some reason.") ; return ; end
+                if not self.SID then self.SID = 1 ; end
+                if self.ImageList and self.ImageList[self.SID] then self:SelectImage(self.SID) ; end
+                return
+          end
+
+          if      self.keys.control.GetKey() > 0.1  then  if self.keys.wheel.GetKey() < 0 then self:ChangeImageCount(self.imageCount+2) ; elseif self.keys.wheel.GetKey() > 0 then self:ChangeImageCount(self.imageCount-2) ; end
+          elseif  self.keys.wheel.GetKey()   < 0    then  if ( self.keys.run.GetKey() > 0 or self.keys.shift.GetKey() > 0 ) then self:SelectImage(self.SID-self.imageCount) ; else self:SelectImage(self.SID-1) ; end ;  print ("Quandro : Selected : "..tostring(self.SID).." : "..tostring(self.SelectedImage) ) ; if self.debug then print("Quandro : Update Time : "..tostring(self.updateClockTotal)) end
+          elseif  self.keys.wheel.GetKey()   > 0    then  if ( self.keys.run.GetKey() > 0 or self.keys.shift.GetKey() > 0 ) then self:SelectImage(self.SID+self.imageCount) ; else self:SelectImage(self.SID+1) ; end ;  print ("Quandro : Selected : "..tostring(self.SID).." : "..tostring(self.SelectedImage) ) ; if self.debug then print("Quandro : Update Time : "..tostring(self.updateClockTotal)) end
+          elseif  self.keys.mouse3.GetKeyDown()     then  self:ChangeImageCount(self.imageCount-2)
+          elseif  self.keys.mouse4.GetKeyDown()     then  self:ChangeImageCount(self.imageCount+2)
+          end
+
+  elseif  not self.visible
+  then
+          self:DestroyObjects()
+  end
+
+  if      self.tick % self.textureCacheTick == 0  then for i = 1,self.imageCount do  self:CacheImagesTick()  end ; end
+
+  self.updateClockEnd   = os.clock()
+  self.updateClockTotal = self.updateClockEnd - self.updateClockStart
+
+end
+
+function Quandro:DeployCleanupScript()
+    local file = Application.persistentDataPath.."/userData/img_cache/img_cache_cleanup.bat"
+    if  file_exists(file)  then return true ; end
+    if  string2file
+    then
+        string2file(
+            '@ECHO OFF\r\n\r\nTITLE Homebrew: Image Cache Cleanup: Running\r\n\r\nECHO Image Cache Cleanup Begin\r\n\r\nIF NOT EXIST "img_cache.txt"  PUSHD "%USERPROFILE%\\AppData\\LocalLow\\CopyBugPaste\\Homebrew14\\userData\\img_cache\\"\r\nIF NOT EXIST "img_cache.txt"  ECHO img_cache.txt does not exist, so Im just going to not do anything...\r\nIF NOT EXIST "img_cache.txt"  GOTO END\r\n\r\nfor %%f in (*.png) do (\r\n find "%%~nf" img_cache.txt 2>NUL >NUL || ( ECHO DEL /Q /F "%%f" && DEL /Q /F "%%f" )\r\n)\r\n\r\nTITLE Homebrew: Image Cache Cleanup: Complete\r\n\r\nECHO Image Cache Cleanup Complete\r\n\r\n\r\n:END\r\n\r\nEXIT\r\n',
+            file,
+            "w",
+            "\r\n"
+        )
+        return true
+    else
+        return false
+    end
+    return false
+end
+
+function Quandro:ExecuteCleanupScript()
+    if not shell then return ; end
+    local file   = "img_cache_cleanup.bat"
+    local dir    = Application.persistentDataPath.."/userData/img_cache/" ; dir = string.gsub(dir,"[/]","\\")
+    local script = 'PUSHD "'..dir..'" && IF EXIST "'..file..'" start "Homebrew: Image Cache Cleanup" /MIN "'..file..'"'
+    print( shell(script) )
+end
+
+function Quandro:OnDestroy()
+  print("Quandro:OnDestroy()")
+  self:DestroyObjects()
+  HBU.EnableGadgetMouseScroll()
+end
+
+
+return Quandro
+

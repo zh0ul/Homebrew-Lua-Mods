@@ -1,0 +1,16 @@
+......##############......
+....##..............##....
+..##..................##..
+##......................##
+##......................##
+##......................##
+##..........##..........##
+##......................##
+##......................##
+##......................##
+..##..................##..
+....##..............##....
+......##############......
+
+// TC.debug = false ; testFunc2(10,'aTex = TC.TextureFromString("C:/Users/owner/AppData/LocalLow/CopyBugPaste/Homebrew14/Lua/ModLua/TextureFromString-crosshair-1.txt",4,2 ) ; GameObject.Destroy(aTex) ; aTex = false')
+// if aTex then HBZ:SendWWW(nil,aTex,"texture-test.png") ; end

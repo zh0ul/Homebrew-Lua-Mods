@@ -1,0 +1,43 @@
+UITest = {}
+
+function UITest:Awake()
+    print("UITest:Awake()")
+    if not UI then print("UITest:Awake()  Could not find Global/Provider UI.") ; return ; end
+    echo(os.clock())
+    self.crosshair_path = Application.persistentDataPath.."/Lua/GadgetLua/GrappleCrosshair.png"
+    self.qmark_path = Application.persistentDataPath.."/Lua/GadgetLua/Quandro.png"
+    self.crosshair = UI:AddImage(50,50,150,150, self.crosshair_path) -- (x ,y, w, h, file path)
+    -- self.crosshair.SetDimensions(200,200)
+    if not self.crosshair then print("UITest:Awake : ERROR : crosshair is empty.  Missing GrappleCrosshair.png in GadgetLua?") ; return ; end
+    self.crosshair.SetPosition(Screen.width/2, Screen.height/2)
+
+    self.rmb = HBU.GetKey("UseGadgetSecondary")
+    self.lmb = HBU.GetKey("UseGadget")
+    echo(os.clock())
+
+end
+
+function UITest:Update()
+    if not self or not self.crosshair or self.crosshair.GetDimensions or self.crosshair.GetPath or self.lmb or self.qmark_path then return end
+    local x,y = self.crosshair.GetDimensions()
+    local path = self.crosshair.GetPath()
+    if self.lmb.GetKey() > 0.1 then
+        if x < 200 and y < 200 then self.crosshair.SetDimensions(200,200) end
+    else
+        if x > 150 and y > 150 then self.crosshair.SetDimensions(150,150) end
+    end
+    if self.rmb.GetKeyDown() then
+        -- if path == self.crosshair_path then self.crosshair = UI:AddImage(Screen.width/2, Screen.height/2, 150,150, self.qmark_path)
+        -- elseif path == self.qmark_path then self.crosshair = UI:AddImage(Screen.width/2, Screen.height/2, 150,150, self.crosshair_path)
+        -- end
+        if path == self.crosshair_path then self.crosshair.SetImage(self.qmark_path)
+        elseif path == self.qmark_path then self.crosshair.SetImage(self.crosshair_path)
+        end
+    end
+end
+
+function UITest:OnDestroy()
+    print("UITest:OnDestroy()")
+    UI:CleanUp()
+end
+return UITest

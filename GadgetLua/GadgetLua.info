@@ -1,0 +1,14 @@
+HOLD RIGHT CLICK   -  OPEN INVENTORY
+THEN
+    SCROLL                   -  CHANGE VEHICLE +/- 1
+    SHIFT+SCROLL       -  CHANGE VEHICLE +/- PAGE
+
+LEFT CLICK                -  SPAWN VEHICLE
+THEN
+    SCROLL                  -  MOVE VEHICLE
+    CONTROL               -  ROTATE VEHICLE
+    LEFT CLICK            -  DROP VEHICLE
+    RIGHT CLICK          -  CANCEL SPAWN
+
+
+
